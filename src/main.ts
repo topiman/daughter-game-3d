@@ -223,7 +223,7 @@ class Game {
     this.placementSystem.update(this.player, this.world, this.inventory);
 
     // 水方块
-    this.waterBlock.update(dt);
+    this.waterBlock.update(dt, this.player.position);
 
     // E键交互
     if (this.input.consumeEPress()) {
@@ -311,6 +311,7 @@ class Game {
       const now = performance.now() / 1000;
       if (now - this.player.lastAttackTime >= CONFIG.SWORD_COOLDOWN) {
         this.player.lastAttackTime = now;
+        this.player.playAttackAnimation();
         // 射线检测变异人
         const origin = this.player.getEyePosition();
         const dir = this.player.getLookDirection();

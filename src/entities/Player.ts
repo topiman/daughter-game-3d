@@ -21,6 +21,13 @@ export class Player {
   // 坠落检测
   private lastGroundedY = 0;
   private wasFalling = false;
+  
+  // 身体朝向（第三人称时独立于摄像机）
+  private bodyYaw = 0;
+  
+  // 攻击动画
+  private attackAnimTime = 0;
+  private isAttacking = false;
 
   // 方块人模型
   mesh: THREE.Group;
@@ -109,6 +116,12 @@ export class Player {
     this.swordMesh.visible = visible;
   }
 
+  // 触发攻击动画
+  playAttackAnimation(): void {
+    this.isAttacking = true;
+    this.attackAnimTime = 0;
+  }
+
   update(dt: number, input: InputManager, physics: Physics, camera: THREE.PerspectiveCamera): void {
     // 视角旋转
     const { dx, dy } = input.consumeMouseDelta();
@@ -188,24 +201,53 @@ export class Player {
       camera.updateProjectionMatrix();
     }
 
+    // 身体朝向：第三人称时跟随移动方向，第一人称跟随摄像机
+    if (this.isFirstPerson) {
+      this.bodyYaw = this.yaw;
+    } else if (moveDir.lengthSq() > 0) {
+      // 计算移动方向的角度
+      const targetBodyYaw = Math.atan2(-moveDir.x, -moveDir.z);
+      // 平滑转身
+      let diff = targetBodyYaw - this.bodyYaw;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      this.bodyYaw += diff * Math.min(1, dt * 12);
+    }
+
     // 更新模型位置和朝向
     this.mesh.position.copy(this.position);
-    this.mesh.rotation.y = this.yaw;
+    this.mesh.rotation.y = this.bodyYaw;
 
     // 在第一人称隐藏模型
     this.mesh.visible = !this.isFirstPerson;
+
+    // 攻击动画更新
+    if (this.isAttacking) {
+      this.attackAnimTime += dt;
+      const animDuration = 0.3;
+      if (this.attackAnimTime < animDuration) {
+        // 右臂+剑向前挥动
+        const t = this.attackAnimTime / animDuration;
+        const swing = Math.sin(t * Math.PI) * -1.5; // 前挥弧度
+        this.rightArm.rotation.x = swing;
+        this.swordMesh.rotation.x = swing * 0.5;
+      } else {
+        this.isAttacking = false;
+        this.attackAnimTime = 0;
+      }
+    }
 
     // 走路动画
     if (moveDir.lengthSq() > 0 && this.grounded) {
       this.walkTime += dt * 8;
       const swing = Math.sin(this.walkTime) * 0.4;
       this.leftArm.rotation.x = swing;
-      this.rightArm.rotation.x = -swing;
+      if (!this.isAttacking) this.rightArm.rotation.x = -swing;
       this.leftLeg.rotation.x = -swing;
       this.rightLeg.rotation.x = swing;
     } else {
       this.leftArm.rotation.x *= 0.9;
-      this.rightArm.rotation.x *= 0.9;
+      if (!this.isAttacking) this.rightArm.rotation.x *= 0.9;
       this.leftLeg.rotation.x *= 0.9;
       this.rightLeg.rotation.x *= 0.9;
     }
