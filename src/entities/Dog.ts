@@ -108,7 +108,7 @@ export class Dog {
       const frontZ = this.position.z + toPlayer.z * 0.5;
       const frontBox = makeAABB(frontX, this.position.y, frontZ, this.DOG_WIDTH, this.DOG_HEIGHT, this.DOG_WIDTH);
       if (physics.collidesWithWorld(frontBox)) {
-        this.velocity.y = CONFIG.PLAYER_JUMP_VELOCITY * 0.7; // 狗跳稍矮
+        this.velocity.y = CONFIG.PLAYER_JUMP_VELOCITY; // 和玩家跳一样高
         this.grounded = false;
       }
     }
