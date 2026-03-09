@@ -13,6 +13,8 @@ export enum BlockType {
   DIRT = 3,
   WOOD = 4,
   WATER_BLOCK = 5,
+  BED = 6,
+  SOFA = 7,
 }
 
 export interface ItemDef {
@@ -70,6 +72,7 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'bed',
     name: '床',
     category: ItemCategory.FURNITURE,
+    blockType: BlockType.BED,
     stackable: false,
     maxStack: 1,
     weight: 5,
@@ -80,6 +83,7 @@ export const ITEMS: Record<string, ItemDef> = {
     id: 'sofa',
     name: '沙发',
     category: ItemCategory.FURNITURE,
+    blockType: BlockType.SOFA,
     stackable: false,
     maxStack: 1,
     weight: 5,

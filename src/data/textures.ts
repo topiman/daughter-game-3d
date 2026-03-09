@@ -14,6 +14,8 @@ export const BLOCK_UVS: Record<number, { top: [number, number]; side: [number, n
   [BlockType.DIRT]:    { top: [3, 0], side: [3, 0], bottom: [3, 0] },
   [BlockType.WOOD]:    { top: [4, 0], side: [5, 0], bottom: [4, 0] },
   [BlockType.WATER_BLOCK]: { top: [6, 0], side: [6, 0], bottom: [6, 0] },
+  [BlockType.BED]:   { top: [7, 0], side: [7, 1], bottom: [3, 0] },
+  [BlockType.SOFA]:  { top: [0, 1], side: [1, 1], bottom: [3, 0] },
 };
 
 function drawPixelRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
@@ -134,6 +136,82 @@ export function createTextureAtlas(): THREE.CanvasTexture {
     // 中心高光
     drawPixelRect(ctx, x + 5, y + 5, 6, 6, 'rgba(200,230,255,0.6)');
     drawPixelRect(ctx, x + 6, y + 6, 4, 4, 'rgba(230,245,255,0.8)');
+  });
+
+  // 7,0 - 床顶面（白色枕头+红色被子）
+  drawTile(ctx, 7, 0, (ctx, x, y) => {
+    // 被子（红色）
+    drawNoise(ctx, x, y, [200, 60, 60], 15);
+    // 枕头（白色，左上角）
+    drawPixelRect(ctx, x + 1, y + 1, 6, 4, '#fff');
+    drawPixelRect(ctx, x + 2, y + 2, 4, 2, '#eee');
+    // 被子折痕
+    for (let px = 0; px < TILE_SIZE; px++) {
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(x + px, y + 8, 1, 1);
+    }
+  });
+
+  // 7,1 - 床侧面（木框+红色）
+  drawTile(ctx, 7, 1, (ctx, x, y) => {
+    // 上部红色（被子侧面）
+    for (let py = 0; py < 10; py++) {
+      for (let px = 0; px < TILE_SIZE; px++) {
+        const v = (Math.random() - 0.5) * 10;
+        ctx.fillStyle = `rgb(${180 + v|0},${50 + v|0},${50 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 下部木框
+    for (let py = 10; py < TILE_SIZE; py++) {
+      for (let px = 0; px < TILE_SIZE; px++) {
+        const v = (Math.random() - 0.5) * 10;
+        ctx.fillStyle = `rgb(${160 + v|0},${120 + v|0},${60 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 木框边线
+    drawPixelRect(ctx, x, y + 10, TILE_SIZE, 1, '#8B6914');
+  });
+
+  // 0,1 - 沙发顶面（蓝绿色坐垫）
+  drawTile(ctx, 0, 1, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [70, 150, 160], 15);
+    // 坐垫缝线
+    drawPixelRect(ctx, x + 7, y, 2, TILE_SIZE, 'rgba(0,0,0,0.15)');
+    // 扶手
+    drawPixelRect(ctx, x, y, 2, TILE_SIZE, '#4a9ea8');
+    drawPixelRect(ctx, x + 14, y, 2, TILE_SIZE, '#4a9ea8');
+  });
+
+  // 1,1 - 沙发侧面（蓝绿色+木腿）
+  drawTile(ctx, 1, 1, (ctx, x, y) => {
+    // 靠背（上部深色）
+    for (let py = 0; py < 5; py++) {
+      for (let px = 0; px < TILE_SIZE; px++) {
+        const v = (Math.random() - 0.5) * 10;
+        ctx.fillStyle = `rgb(${50 + v|0},${120 + v|0},${130 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 坐垫
+    for (let py = 5; py < 12; py++) {
+      for (let px = 0; px < TILE_SIZE; px++) {
+        const v = (Math.random() - 0.5) * 10;
+        ctx.fillStyle = `rgb(${70 + v|0},${150 + v|0},${160 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 木腿
+    drawPixelRect(ctx, x + 1, y + 12, 2, 4, '#8B6914');
+    drawPixelRect(ctx, x + 13, y + 12, 2, 4, '#8B6914');
+    // 底部空隙
+    for (let py = 12; py < TILE_SIZE; py++) {
+      for (let px = 3; px < 13; px++) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
   });
 
   const texture = new THREE.CanvasTexture(canvas);

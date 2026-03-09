@@ -120,6 +120,8 @@ export class PlacementSystem {
       case BlockType.GRASS: itemId = 'grass_block'; break;
       case BlockType.DIRT: itemId = 'dirt_block'; break;
       case BlockType.WOOD: itemId = 'wood_block'; break;
+      case BlockType.BED: itemId = 'bed'; break;
+      case BlockType.SOFA: itemId = 'sofa'; break;
     }
     
     if (itemId && ITEMS[itemId]) {
@@ -140,11 +142,9 @@ export class PlacementSystem {
     
     const { x, y, z } = this.placeBlock;
     
-    if (item.blockType !== undefined) {
-      world.setBlock(x, y, z, item.blockType);
-    } else if (item.id === 'bed') {
+    if (item.id === 'bed') {
       // 床占 2×1×1
-      world.setBlock(x, y, z, BlockType.WOOD);
+      world.setBlock(x, y, z, BlockType.BED);
       const dir = player.getLookDirection();
       let dx = 0, dz = 0;
       if (Math.abs(dir.x) > Math.abs(dir.z)) {
@@ -152,9 +152,9 @@ export class PlacementSystem {
       } else {
         dz = dir.z > 0 ? 1 : -1;
       }
-      world.setBlock(x + dx, y, z + dz, BlockType.WOOD);
-    } else if (item.id === 'sofa') {
-      world.setBlock(x, y, z, BlockType.WOOD);
+      world.setBlock(x + dx, y, z + dz, BlockType.BED);
+    } else if (item.blockType !== undefined) {
+      world.setBlock(x, y, z, item.blockType);
     }
     
     inventory.consumeSelected();
