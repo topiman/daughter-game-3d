@@ -34,6 +34,7 @@ export class TouchControls {
   attackPressed = false;
   interactPressed = false;
   placePressed = false;
+  breakPressed = false;
 
   // 右半屏拖动 → 视角
   lookDX = 0;
@@ -76,7 +77,8 @@ export class TouchControls {
     this.createButton('⬆', 'right: 30px; bottom: 80px; width: 70px; height: 70px; font-size: 28px;', () => { this.jumpPressed = true; });
     this.createButton('⚔', 'right: 30px; bottom: 170px; width: 60px; height: 60px; font-size: 24px;', () => { this.attackPressed = true; });
     this.createButton('E', 'right: 30px; bottom: 250px; width: 56px; height: 56px; font-size: 22px;', () => { this.interactPressed = true; });
-    this.createButton('📦', 'right: 100px; bottom: 170px; width: 50px; height: 50px; font-size: 20px;', () => { this.placePressed = true; });
+    this.createButton('📦', 'right: 100px; bottom: 250px; width: 50px; height: 50px; font-size: 20px;', () => { this.placePressed = true; });
+    this.createButton('⛏', 'right: 100px; bottom: 170px; width: 50px; height: 50px; font-size: 20px;', () => { this.breakPressed = true; });
 
     document.body.appendChild(this.container);
 
@@ -130,6 +132,11 @@ export class TouchControls {
 
   consumePlace(): boolean {
     if (this.placePressed) { this.placePressed = false; return true; }
+    return false;
+  }
+
+  consumeBreak(): boolean {
+    if (this.breakPressed) { this.breakPressed = false; return true; }
     return false;
   }
 

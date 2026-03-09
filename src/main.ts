@@ -373,6 +373,11 @@ class Game {
         this.handleRightClick();
       }
 
+      // 触控拆方块（收回物品栏）
+      if (this.touchControls.consumeBreak()) {
+        this.handleBreakBlock();
+      }
+
       // 摇杆 → WASD
       const jx = this.touchControls.joystick.dx;
       const jy = this.touchControls.joystick.dy;
@@ -614,6 +619,24 @@ class Game {
     if (this.placementSystem.breakBlock(this.world, this.inventory)) {
       this.audioSystem.playSFX('break');
       this.needsRemesh = true;
+    }
+  }
+
+  // 专门破坏方块（iPad拆按钮用，不触发攻击）
+  private handleBreakBlock(): void {
+    if (this.placementSystem.hitBlock) {
+      const { x, y, z } = this.placementSystem.hitBlock;
+      const block = this.world.getBlock(x, y, z);
+      if (block === BlockType.LAMP || block === BlockType.NIGHTLIGHT) {
+        this.lightingSystem.removeLight(x, y, z, this.renderer.scene);
+      }
+      if (block === BlockType.SNOWMAN) {
+        this.snowmanTracker.removeSnowman(x, y, z);
+      }
+      if (this.placementSystem.breakBlock(this.world, this.inventory)) {
+        this.audioSystem.playSFX('break');
+        this.needsRemesh = true;
+      }
     }
   }
 
