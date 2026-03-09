@@ -19,6 +19,7 @@ export class HUD {
   private hotbarSlots: HTMLDivElement[] = [];
   private messageDisplay: HTMLDivElement;
   private messageTimeout: number | null = null;
+  onSlotSelect: ((index: number) => void) | null = null;
 
   constructor() {
     this.container = document.createElement('div');
@@ -119,6 +120,13 @@ export class HUD {
       num.textContent = String(i + 1);
       slot.appendChild(num);
       
+      // 点击/触摸切换物品栏
+      const slotIndex = i;
+      slot.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        this.onSlotSelect?.(slotIndex);
+      });
+
       this.hotbarSlots.push(slot);
       this.hotbar.appendChild(slot);
     }

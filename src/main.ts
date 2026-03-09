@@ -107,6 +107,9 @@ class Game {
 
     // UI
     this.hud = new HUD();
+    this.hud.onSlotSelect = (index: number) => {
+      this.inventory.setSelected(index);
+    };
     this.pauseMenu = new PauseMenu();
     this.gameOverScreen = new GameOverScreen();
     this.titleScreen = new TitleScreen();
@@ -579,8 +582,8 @@ class Game {
           const dist = toMutant.length();
           
           if (dist <= CONFIG.SWORD_RANGE) {
-            const knockDir = toMutant.clone().normalize();
-            const dot = knockDir.dot(dir);
+            const knockDir = new THREE.Vector3(toMutant.x, 0, toMutant.z).normalize(); // 纯水平击退
+            const dot = toMutant.clone().normalize().dot(dir);
             if (dot > 0.5) {
               mutant.takeDamage(CONFIG.SWORD_DAMAGE, knockDir);
               this.hud.showMessage('⚔️ 击中变异人！');
