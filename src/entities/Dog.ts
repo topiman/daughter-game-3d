@@ -80,7 +80,9 @@ export class Dog {
     this.mesh.add(tail);
   }
 
-  update(dt: number, playerPos: THREE.Vector3, mutants: Array<{ position: THREE.Vector3 }>): void {
+  private groundY = 0;
+
+  update(dt: number, playerPos: THREE.Vector3, mutants: Array<{ position: THREE.Vector3 }>, playerGrounded?: boolean): void {
     // 跟随玩家
     const toPlayer = new THREE.Vector3().subVectors(playerPos, this.position);
     toPlayer.y = 0;
@@ -95,17 +97,11 @@ export class Dog {
       this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
     }
 
-    // 狗贴地面，不跟玩家跳（平滑过渡到玩家地面高度）
-    const targetY = playerPos.y;
-    if (this.position.y < targetY - 0.5) {
-      // 玩家在高处（爬上方块），狗瞬移跟上
-      this.position.y = targetY;
-    } else if (this.position.y > targetY + 0.1) {
-      // 玩家在低处（跳跃中或落下），狗不跟着飞，保持当前高度
-    } else {
-      // 正常地面跟随
-      this.position.y = targetY;
+    // 狗只在玩家落地时同步Y，跳跃时不跟
+    if (playerGrounded !== false) {
+      this.groundY = playerPos.y;
     }
+    this.position.y = this.groundY;
     this.mesh.position.copy(this.position);
 
     // 检测变异人

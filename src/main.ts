@@ -449,7 +449,7 @@ class Game {
     }
 
     // 小狗
-    this.dog.update(dt, this.player.position, this.spawnSystem.mutants);
+    this.dog.update(dt, this.player.position, this.spawnSystem.mutants, this.player.grounded);
     if (this.dog.isBarking) {
       this.hud.showMessage('🐕 汪汪！有危险！', 2000);
     }
