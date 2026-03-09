@@ -40,7 +40,8 @@ export class Physics {
     for (let x = startX; x <= endX; x++) {
       for (let y = startY; y <= endY; y++) {
         for (let z = startZ; z <= endZ; z++) {
-          if (this.world.getBlock(x, y, z) !== BlockType.AIR) {
+          const block = this.world.getBlock(x, y, z);
+          if (block !== BlockType.AIR && block !== BlockType.TALL_GRASS) {
             // 方块的AABB
             const blockBox: AABB = {
               minX: x, minY: y, minZ: z,

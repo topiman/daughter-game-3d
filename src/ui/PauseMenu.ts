@@ -1,8 +1,9 @@
-// 暂停菜单
+// 暂停菜单 — 增加保存按钮
 export class PauseMenu {
   private container: HTMLDivElement;
   private visible = false;
   onResume: (() => void) | null = null;
+  onSave: (() => void) | null = null;
 
   constructor() {
     this.container = document.createElement('div');
@@ -31,6 +32,21 @@ export class PauseMenu {
       this.onResume?.();
     };
     this.container.appendChild(resumeBtn);
+
+    // 保存游戏按钮
+    const saveBtn = document.createElement('button');
+    saveBtn.style.cssText = `
+      padding: 12px 40px; font-size: 20px; cursor: pointer;
+      background: #44AA44; color: white; border: none; border-radius: 8px;
+      font-family: inherit; pointer-events: auto;
+    `;
+    saveBtn.textContent = '💾 保存游戏';
+    saveBtn.onclick = () => {
+      this.onSave?.();
+      saveBtn.textContent = '✅ 已保存！';
+      setTimeout(() => { saveBtn.textContent = '💾 保存游戏'; }, 2000);
+    };
+    this.container.appendChild(saveBtn);
 
     const hint = document.createElement('div');
     hint.style.cssText = 'color: #aaa; font-size: 14px; margin-top: 20px;';

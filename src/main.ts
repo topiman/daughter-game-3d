@@ -18,7 +18,7 @@ import { GameOverScreen } from './ui/GameOverScreen';
 import { TitleScreen } from './ui/TitleScreen';
 import { createTextureAtlas } from './data/textures';
 import { CONFIG } from './data/config';
-import { getRandomItem, ItemCategory, BlockType } from './data/items';
+import { getRandomItem, ItemCategory, BlockType, ITEMS } from './data/items';
 import { WeatherSystem } from './systems/WeatherSystem';
 import { FurnitureSystem } from './systems/FurnitureSystem';
 import { AudioSystem } from './systems/AudioSystem';
@@ -26,6 +26,10 @@ import { LightingSystem } from './systems/LightingSystem';
 import { StorageSystem } from './systems/StorageSystem';
 import { Dog } from './entities/Dog';
 import { isTentArea } from './systems/TentSystem';
+import { SaveSystem, SaveData } from './systems/SaveSystem';
+import { createSnowmanTracker } from './systems/SnowmanSystem';
+import { hasPillowNearby } from './systems/PillowHelper';
+import { TouchControls, isTouchDevice } from './ui/TouchControls';
 
 class Game {
   private renderer: Renderer;
@@ -57,6 +61,12 @@ class Game {
   private needsRemesh = false;
   private lastDayForWeather = 0;
 
+  // P2 新增
+  private saveSystem: SaveSystem;
+  private snowmanTracker = createSnowmanTracker();
+  private touchControls: TouchControls;
+  private isTouch: boolean;
+
   constructor() {
     // 创建canvas
     const canvas = document.createElement('canvas');
@@ -68,6 +78,7 @@ class Game {
     // 初始化引擎
     this.renderer = new Renderer(canvas);
     this.input = new InputManager(canvas);
+    this.isTouch = isTouchDevice();
 
     // 纹理
     const atlas = createTextureAtlas();
@@ -108,55 +119,78 @@ class Game {
     this.storageSystem = new StorageSystem();
     this.dog = new Dog();
 
+    // P2 新系统
+    this.saveSystem = new SaveSystem();
+    this.touchControls = new TouchControls();
+
     this.hud.hide();
+
+    // 检查是否有存档 → 显示继续游戏
+    if (this.saveSystem.hasSave()) {
+      this.titleScreen.showContinueButton();
+    }
 
     // 事件
     this.titleScreen.onStart = () => this.startGame();
+    this.titleScreen.onContinue = () => this.startGame(true);
     this.pauseMenu.onResume = () => this.resumeGame();
+    this.pauseMenu.onSave = () => this.manualSave();
     this.gameOverScreen.onRestart = () => this.restartGame();
 
-    // Pointer Lock 变化
-    document.addEventListener('pointerlockchange', () => {
-      if (!this.input.isLocked && this.running && !this.paused) {
-        this.pauseGame();
-      }
-    });
+    // Pointer Lock 变化（桌面端）
+    if (!this.isTouch) {
+      document.addEventListener('pointerlockchange', () => {
+        if (!this.input.isLocked && this.running && !this.paused) {
+          this.pauseGame();
+        }
+      });
+    }
   }
 
-  private startGame(): void {
-    this.init();
-    this.input.requestPointerLock();
+  private startGame(loadSave = false): void {
+    this.init(loadSave);
+    if (!this.isTouch) {
+      this.input.requestPointerLock();
+    } else {
+      // 触屏模式：直接标记为 locked 以正常运行
+      this.input.isLocked = true;
+      this.touchControls.init();
+      this.touchControls.show();
+    }
     this.running = true;
     this.paused = false;
     this.hud.show();
-    this.hud.showMessage('靠近蓝色水方块按 E 获取物品！', 5000);
+
+    // 操作提示
+    if (this.isTouch) {
+      this.hud.showMessage('摇杆移动 | 拖动视角 | 按钮操作', 3000);
+    } else {
+      this.hud.showMessage('WASD移动 | 鼠标视角 | 空格跳跃 | 左键攻击 | 右键放置 | E交互', 3000);
+    }
+
     this.lastTime = performance.now();
     this.gameLoop();
   }
 
-  private init(): void {
+  private init(loadSave = false): void {
     // 生成世界
     this.world = new VoxelWorld();
     this.world.generate();
+    this.world.enableTracking(); // 开始追踪变更
     this.physics = new Physics(this.world);
 
-    // 构建世界 mesh
-    this.buildWorldMesh();
-
-    // 玩家位置
+    // 玩家
     this.player = new Player();
     const spawnX = CONFIG.WORLD_WIDTH / 2 + 3;
     const spawnZ = CONFIG.WORLD_DEPTH / 2 + 3;
     const spawnY = this.world.getSurfaceHeight(Math.floor(spawnX), Math.floor(spawnZ));
     this.player.position.set(spawnX, spawnY, spawnZ);
-    this.renderer.scene.add(this.player.mesh);
 
     // 水方块
     const cx = Math.floor(CONFIG.WORLD_WIDTH / 2);
     const cz = Math.floor(CONFIG.WORLD_DEPTH / 2);
     const waterY = this.world.getSurfaceHeight(cx, cz);
     this.waterBlock = new WaterBlock(cx, waterY, cz);
-    this.renderer.scene.add(this.waterBlock.mesh);
 
     // 重置系统
     this.timeSystem = new TimeSystem();
@@ -172,8 +206,77 @@ class Game {
     this.storageSystem = new StorageSystem();
     this.dog = new Dog();
     this.dog.position.set(spawnX + 2, spawnY, spawnZ + 2);
-    this.renderer.scene.add(this.dog.mesh);
     this.lastDayForWeather = 0;
+
+    // P2 系统重置
+    this.snowmanTracker = createSnowmanTracker();
+
+    // 读档恢复
+    if (loadSave) {
+      const saveData = this.saveSystem.load();
+      if (saveData) {
+        this.applySaveData(saveData);
+      }
+    }
+
+    // 构建场景
+    this.buildWorldMesh();
+    this.renderer.scene.add(this.player.mesh);
+    this.renderer.scene.add(this.waterBlock.mesh);
+    this.renderer.scene.add(this.dog.mesh);
+  }
+
+  private applySaveData(data: SaveData): void {
+    // 玩家
+    this.player.position.set(data.player.x, data.player.y, data.player.z);
+    this.player.hp = data.player.hp;
+    this.player.hunger = data.player.hunger;
+    this.player.kills = data.player.kills;
+    this.player.daysSurvived = data.player.daysSurvived;
+
+    // 物品栏
+    this.inventory.loadFromSave(data.inventory.slots);
+
+    // 时间
+    this.timeSystem.elapsed = data.time.elapsed;
+    this.timeSystem.gameDay = data.time.gameDay;
+
+    // 世界变更
+    this.world.applyChanges(data.world.changes);
+
+    // 狗
+    if (data.dog?.owned) {
+      // 狗已拥有
+    }
+
+    // 存储空间
+    if (data.storages) {
+      this.storageSystem.loadFromSave(data.storages);
+    }
+  }
+
+  private collectSaveData(): SaveData {
+    return {
+      version: 1,
+      player: {
+        x: this.player.position.x,
+        y: this.player.position.y,
+        z: this.player.position.z,
+        hp: this.player.hp,
+        hunger: this.player.hunger,
+        kills: this.player.kills,
+        daysSurvived: this.player.daysSurvived,
+      },
+      inventory: { slots: this.inventory.toSaveFormat() },
+      time: { elapsed: this.timeSystem.elapsed, gameDay: this.timeSystem.gameDay },
+      world: { changes: this.world.getChanges() },
+      dog: { owned: true },
+      storages: this.storageSystem.toSaveFormat(),
+    };
+  }
+
+  private manualSave(): void {
+    this.saveSystem.save(this.collectSaveData());
   }
 
   private buildWorldMesh(): void {
@@ -189,10 +292,18 @@ class Game {
   private pauseGame(): void {
     this.paused = true;
     this.pauseMenu.show();
+    if (this.isTouch) {
+      this.touchControls.hide();
+    }
   }
 
   private resumeGame(): void {
-    this.input.requestPointerLock();
+    if (!this.isTouch) {
+      this.input.requestPointerLock();
+    } else {
+      this.input.isLocked = true;
+      this.touchControls.show();
+    }
     this.paused = false;
     this.lastTime = performance.now();
   }
@@ -229,6 +340,55 @@ class Game {
   private update(dt: number): void {
     if (!this.input.isLocked) return;
 
+    // 触控输入处理
+    if (this.isTouch) {
+      // 触控视角
+      const look = this.touchControls.consumeLookDelta();
+      if (look.dx !== 0 || look.dy !== 0) {
+        this.input.mouseDX += look.dx;
+        this.input.mouseDY += look.dy;
+      }
+
+      // 触控跳跃
+      if (this.touchControls.consumeJump()) {
+        this.input.keys.add('Space');
+        setTimeout(() => this.input.keys.delete('Space'), 100);
+      }
+
+      // 触控攻击
+      if (this.touchControls.consumeAttack()) {
+        this.handleLeftClick();
+      }
+
+      // 触控交互
+      if (this.touchControls.consumeInteract()) {
+        this.handleInteraction();
+      }
+
+      // 触控放置
+      if (this.touchControls.consumePlace()) {
+        this.handleRightClick();
+      }
+
+      // 摇杆 → WASD
+      const jx = this.touchControls.joystick.dx;
+      const jy = this.touchControls.joystick.dy;
+      if (Math.abs(jy) > 0.2) {
+        if (jy < 0) this.input.keys.add('KeyW');
+        else this.input.keys.add('KeyS');
+      } else {
+        this.input.keys.delete('KeyW');
+        this.input.keys.delete('KeyS');
+      }
+      if (Math.abs(jx) > 0.2) {
+        if (jx > 0) this.input.keys.add('KeyD');
+        else this.input.keys.add('KeyA');
+      } else {
+        this.input.keys.delete('KeyD');
+        this.input.keys.delete('KeyA');
+      }
+    }
+
     // 数字键切换物品栏
     const numKey = this.input.getNumberKey();
     if (numKey >= 0) this.inventory.setSelected(numKey);
@@ -251,24 +411,25 @@ class Game {
     // 生存
     this.survivalSystem.update(dt, this.player, this.timeSystem);
 
-    // 放置系统
+    // 放置系统（传递天气状态）
+    this.placementSystem.currentWeather = this.weatherSystem.currentWeather;
     this.placementSystem.update(this.player, this.world, this.inventory);
 
     // 水方块
     this.waterBlock.update(dt, this.player.position);
 
-    // E键交互
-    if (this.input.consumeEPress()) {
+    // E键交互（桌面端）
+    if (!this.isTouch && this.input.consumeEPress()) {
       this.handleInteraction();
     }
 
-    // 左键（破坏/攻击）
-    if (this.input.consumeLeftClick()) {
+    // 左键（破坏/攻击）（桌面端）
+    if (!this.isTouch && this.input.consumeLeftClick()) {
       this.handleLeftClick();
     }
 
-    // 右键（放置）
-    if (this.input.consumeRightClick()) {
+    // 右键（放置）（桌面端）
+    if (!this.isTouch && this.input.consumeRightClick()) {
       this.handleRightClick();
     }
 
@@ -288,7 +449,6 @@ class Game {
     // 变异人（带帐篷/光照检查）
     this.spawnSystem.update(dt, this.player, this.world, this.timeSystem, this.renderer.scene);
     for (const mutant of this.spawnSystem.mutants) {
-      // 帐篷内/光照区目标检查：变异人不追帐篷内/光照区的玩家
       const playerInTent = isTentArea(this.player.position.x, this.player.position.y, this.player.position.z, this.world);
       const playerInLight = this.lightingSystem.isInLight(
         Math.floor(this.player.position.x), Math.floor(this.player.position.y), Math.floor(this.player.position.z)
@@ -298,6 +458,20 @@ class Game {
       }
     }
     this.spawnSystem.removeDeadMutants(this.renderer.scene);
+
+    // 雪人融化追踪
+    this.snowmanTracker.update(dt, this.weatherSystem.currentWeather);
+    const meltedSnowmen = this.snowmanTracker.getMelted();
+    if (meltedSnowmen.length > 0) {
+      for (const s of meltedSnowmen) {
+        this.world.setBlock(s.x, s.y, s.z, BlockType.AIR);
+      }
+      this.snowmanTracker.clearMelted();
+      this.needsRemesh = true;
+    }
+
+    // 自动存档
+    this.saveSystem.updateAutoSave(dt, () => this.collectSaveData());
 
     // 重建 mesh
     if (this.needsRemesh) {
@@ -313,7 +487,12 @@ class Game {
     if (this.player.isDead()) {
       this.running = false;
       this.hud.hide();
-      this.input.exitPointerLock();
+      if (!this.isTouch) {
+        this.input.exitPointerLock();
+      }
+      if (this.isTouch) {
+        this.touchControls.hide();
+      }
       this.gameOverScreen.show(this.player.daysSurvived, this.player.kills);
       return;
     }
@@ -346,13 +525,13 @@ class Game {
       const { x, y, z } = this.placementSystem.hitBlock;
       const block = this.world.getBlock(x, y, z);
 
-      // 床/沙发/马桶
+      // 床/沙发/马桶（检查抱枕增强）
       if (block === BlockType.BED || block === BlockType.SOFA || block === BlockType.TOILET) {
-        const result = this.furnitureSystem.interact(block, this.player, this.timeSystem);
+        const pillow = hasPillowNearby(this.world, x, y, z);
+        const result = this.furnitureSystem.interact(block, this.player, this.timeSystem, pillow);
         this.hud.showMessage(result.message);
         if (result.action === 'skip_night') {
           // 跳到早上
-          // 简单处理：直接推进时间
         }
         if (result.action === 'toilet') {
           this.audioSystem.playSFX('toilet');
@@ -391,20 +570,18 @@ class Game {
       if (now - this.player.lastAttackTime >= CONFIG.SWORD_COOLDOWN) {
         this.player.lastAttackTime = now;
         this.player.playAttackAnimation();
-        // 射线检测变异人
         const origin = this.player.getEyePosition();
         const dir = this.player.getLookDirection();
         
         for (const mutant of this.spawnSystem.mutants) {
           const toMutant = new THREE.Vector3().subVectors(mutant.position, origin);
-          toMutant.y = (mutant.position.y + 0.9) - origin.y; // 瞄准中心
+          toMutant.y = (mutant.position.y + 0.9) - origin.y;
           const dist = toMutant.length();
           
           if (dist <= CONFIG.SWORD_RANGE) {
-            // 检查角度
             const knockDir = toMutant.clone().normalize();
             const dot = knockDir.dot(dir);
-            if (dot > 0.5) { // 约60度内，更宽容
+            if (dot > 0.5) {
               mutant.takeDamage(CONFIG.SWORD_DAMAGE, knockDir);
               this.hud.showMessage('⚔️ 击中变异人！');
               this.audioSystem?.playSFX('sword');
@@ -426,6 +603,10 @@ class Game {
       if (block === BlockType.LAMP || block === BlockType.NIGHTLIGHT) {
         this.lightingSystem.removeLight(x, y, z, this.renderer.scene);
       }
+      // 如果破坏雪人，从追踪器移除
+      if (block === BlockType.SNOWMAN) {
+        this.snowmanTracker.removeSnowman(x, y, z);
+      }
     }
     if (this.placementSystem.breakBlock(this.world, this.inventory)) {
       this.audioSystem.playSFX('break');
@@ -439,15 +620,20 @@ class Game {
       if (this.placementSystem.placeBlockAction(this.world, this.player, this.inventory)) {
         this.audioSystem.playSFX('place');
         this.needsRemesh = true;
-        // 放置灯时添加光源
         if (this.placementSystem.placeBlock && item) {
           const { x, y, z } = this.placementSystem.placeBlock;
           if (item.blockType === BlockType.LAMP) {
             this.lightingSystem.addLight(x, y, z, CONFIG.LAMP_RADIUS, this.renderer.scene);
           } else if (item.blockType === BlockType.NIGHTLIGHT) {
             this.lightingSystem.addLight(x, y, z, CONFIG.NIGHTLIGHT_RADIUS, this.renderer.scene);
+          } else if (item.blockType === BlockType.SNOWMAN) {
+            // 添加雪人到融化追踪
+            this.snowmanTracker.addSnowman(x, y, z);
           }
         }
+      } else if (this.placementSystem.lastPlaceError) {
+        this.hud.showMessage(this.placementSystem.lastPlaceError);
+        this.placementSystem.lastPlaceError = '';
       }
     }
   }

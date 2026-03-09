@@ -7,6 +7,8 @@ export class VoxelWorld {
   readonly depth: number;
   readonly height: number;
   private data: Uint8Array;
+  // 差量变更追踪（用于存档）
+  private changes: Map<string, { x: number; y: number; z: number; blockType: BlockType }> = new Map();
 
   constructor() {
     this.width = CONFIG.WORLD_WIDTH;
@@ -31,6 +33,29 @@ export class VoxelWorld {
   setBlock(x: number, y: number, z: number, type: BlockType): void {
     if (!this.inBounds(x, y, z)) return;
     this.data[this.index(x, y, z)] = type;
+    // 记录变更（generate 阶段不追踪，通过 enableTracking 控制）
+    if (this._tracking) {
+      const key = `${x},${y},${z}`;
+      this.changes.set(key, { x, y, z, blockType: type });
+    }
+  }
+
+  private _tracking = false;
+  enableTracking(): void { this._tracking = true; }
+  disableTracking(): void { this._tracking = false; }
+
+  getChanges(): Array<{ x: number; y: number; z: number; blockType: number }> {
+    return Array.from(this.changes.values());
+  }
+
+  applyChanges(changes: Array<{ x: number; y: number; z: number; blockType: number }>): void {
+    for (const c of changes) {
+      if (this.inBounds(c.x, c.y, c.z)) {
+        this.data[this.index(c.x, c.y, c.z)] = c.blockType;
+        const key = `${c.x},${c.y},${c.z}`;
+        this.changes.set(key, c);
+      }
+    }
   }
 
   // 简单 noise 生成地形
@@ -64,6 +89,11 @@ export class VoxelWorld {
         
         // surfaceY: 草方块
         this.setBlock(x, surfaceY, z, BlockType.GRASS);
+
+        // 草方块上方随机放置 TALL_GRASS
+        if (Math.random() < CONFIG.GRASS_SPAWN_CHANCE && surfaceY + 1 < this.height) {
+          this.setBlock(x, surfaceY + 1, z, BlockType.TALL_GRASS);
+        }
       }
     }
 

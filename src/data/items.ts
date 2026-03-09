@@ -21,6 +21,9 @@ export enum BlockType {
   TENT = 11,
   SHOE_CABINET = 12,
   WARDROBE = 13,
+  SNOWMAN = 14,
+  TALL_GRASS = 15,
+  PILLOW = 16,
 }
 
 export interface ItemDef {
@@ -220,6 +223,39 @@ export const ITEMS: Record<string, ItemDef> = {
     weight: 2,
     icon: '👔',
     iconColor: '#6b4226',
+  },
+  snowman: {
+    id: 'snowman',
+    name: '雪人',
+    category: ItemCategory.BLOCK,
+    blockType: BlockType.SNOWMAN,
+    stackable: false,
+    maxStack: 1,
+    weight: 3,
+    icon: '🧊',
+    iconColor: '#e8f0ff',
+  },
+  tall_grass: {
+    id: 'tall_grass',
+    name: '草',
+    category: ItemCategory.BLOCK,
+    blockType: BlockType.TALL_GRASS,
+    stackable: false,
+    maxStack: 1,
+    weight: 0, // 不可从水方块获取，不回收
+    icon: '🌿',
+    iconColor: '#3a8a00',
+  },
+  pillow: {
+    id: 'pillow',
+    name: '抱枕',
+    category: ItemCategory.FURNITURE,
+    blockType: BlockType.PILLOW,
+    stackable: false,
+    maxStack: 1,
+    weight: 3,
+    icon: '🛏',
+    iconColor: '#9966cc',
   },
 };
 

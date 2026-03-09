@@ -12,12 +12,12 @@ export interface InteractResult {
 export class FurnitureSystem {
   sofaEndTime = 0; // 沙发减缓饥饿效果结束时间
 
-  interact(blockType: BlockType, player: { hp: number; hunger: number }, time: { isNight: boolean }): InteractResult {
+  interact(blockType: BlockType, player: { hp: number; hunger: number }, time: { isNight: boolean }, hasPillow = false): InteractResult {
     switch (blockType) {
       case BlockType.BED:
-        return this.interactBed(player, time);
+        return this.interactBed(player, time, hasPillow);
       case BlockType.SOFA:
-        return this.interactSofa(player);
+        return this.interactSofa(player, hasPillow);
       case BlockType.TOILET:
         return this.interactToilet();
       default:
@@ -25,19 +25,29 @@ export class FurnitureSystem {
     }
   }
 
-  private interactBed(player: { hp: number; hunger: number }, time: { isNight: boolean }): InteractResult {
+  private interactBed(player: { hp: number; hunger: number }, time: { isNight: boolean }, hasPillow = false): InteractResult {
     if (!time.isNight) {
       return { success: false, message: '☀️ 白天不能睡觉哦！' };
     }
-    // 恢复 HP
-    player.hp = Math.min(CONFIG.MAX_HP, player.hp + CONFIG.BED_HP_RESTORE);
-    return { success: true, message: '💤 美美地睡了一觉，恢复了体力！', action: 'skip_night' };
+    // 恢复 HP（有抱枕增强）
+    const restore = hasPillow ? CONFIG.PILLOW_BED_BOOST : CONFIG.BED_HP_RESTORE;
+    player.hp = Math.min(CONFIG.MAX_HP, player.hp + restore);
+    const msg = hasPillow ? '💤 抱着抱枕睡得好香，恢复了更多体力！' : '💤 美美地睡了一觉，恢复了体力！';
+    return { success: true, message: msg, action: 'skip_night' };
   }
 
-  private interactSofa(player: { hp: number; hunger: number }): InteractResult {
+  private interactSofa(player: { hp: number; hunger: number }, hasPillow = false): InteractResult {
     this.sofaEndTime = performance.now() / 1000 + CONFIG.SOFA_HUNGER_SLOW_DURATION;
-    return { success: true, message: '🛋️ 坐在沙发上休息，饥饿消耗减缓！', action: 'rest' };
+    if (hasPillow) {
+      this.sofaRate = CONFIG.PILLOW_SOFA_BOOST;
+    } else {
+      this.sofaRate = CONFIG.SOFA_HUNGER_SLOW_RATE;
+    }
+    const msg = hasPillow ? '🛋️ 抱着抱枕坐沙发，饥饿消耗大幅减缓！' : '🛋️ 坐在沙发上休息，饥饿消耗减缓！';
+    return { success: true, message: msg, action: 'rest' };
   }
+
+  private sofaRate = CONFIG.SOFA_HUNGER_SLOW_RATE;
 
   private interactToilet(): InteractResult {
     return { success: true, message: '🚽 咕噜咕噜～', action: 'toilet' };
@@ -49,6 +59,6 @@ export class FurnitureSystem {
   }
 
   getHungerRate(): number {
-    return this.isSofaActive() ? CONFIG.SOFA_HUNGER_SLOW_RATE : 1.0;
+    return this.isSofaActive() ? this.sofaRate : 1.0;
   }
 }

@@ -22,6 +22,9 @@ export const BLOCK_UVS: Record<number, { top: [number, number]; side: [number, n
   [BlockType.TENT]:        { top: [7, 2], side: [0, 2], bottom: [3, 0] },
   [BlockType.SHOE_CABINET]:{ top: [1, 2], side: [2, 2], bottom: [3, 0] },
   [BlockType.WARDROBE]:    { top: [3, 2], side: [4, 2], bottom: [3, 0] },
+  [BlockType.SNOWMAN]:     { top: [5, 2], side: [6, 2], bottom: [5, 2] },
+  [BlockType.TALL_GRASS]:  { top: [7, 3], side: [7, 3], bottom: [7, 3] },
+  [BlockType.PILLOW]:      { top: [0, 3], side: [1, 3], bottom: [0, 3] },
 };
 
 function drawPixelRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
@@ -314,6 +317,77 @@ export function createTextureAtlas(): THREE.CanvasTexture {
     // 把手
     drawPixelRect(ctx, x + 5, y + 7, 2, 2, '#c0a060');
     drawPixelRect(ctx, x + 9, y + 7, 2, 2, '#c0a060');
+  });
+
+  // 5,2 - 雪人顶面（白色+雪花纹理）
+  drawTile(ctx, 5, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [240, 245, 255], 8);
+    // 雪花点缀
+    for (let i = 0; i < 6; i++) {
+      const px = (Math.random() * 12 + 2) | 0;
+      const py = (Math.random() * 12 + 2) | 0;
+      drawPixelRect(ctx, x + px, y + py, 2, 2, '#cce8ff');
+    }
+    drawPixelRect(ctx, x + 6, y + 6, 4, 4, '#fff');
+  });
+
+  // 6,2 - 雪人侧面（白色球体+眼睛+胡萝卜鼻）
+  drawTile(ctx, 6, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [235, 240, 250], 8);
+    // 眼睛
+    drawPixelRect(ctx, x + 5, y + 3, 2, 2, '#222');
+    drawPixelRect(ctx, x + 9, y + 3, 2, 2, '#222');
+    // 胡萝卜鼻
+    drawPixelRect(ctx, x + 7, y + 5, 2, 3, '#ff8800');
+    // 嘴巴
+    for (let i = 0; i < 4; i++) {
+      drawPixelRect(ctx, x + 5 + i * 2, y + 9, 1, 1, '#333');
+    }
+    // 身体分界线
+    drawPixelRect(ctx, x + 2, y + 11, 12, 1, 'rgba(200,210,220,0.5)');
+  });
+
+  // 7,3 - 草（绿色半透明，十字面片用的纹理）
+  drawTile(ctx, 7, 3, (ctx, x, y) => {
+    // 半透明绿色草叶纹理
+    for (let py = 0; py < TILE_SIZE; py++) {
+      for (let px = 0; px < TILE_SIZE; px++) {
+        // 底部更密，顶部更稀疏
+        const density = py / TILE_SIZE;
+        if (Math.random() < density * 0.8 + 0.1) {
+          const v = (Math.random() - 0.5) * 30;
+          const g = Math.min(255, Math.max(0, 140 + v));
+          ctx.fillStyle = `rgba(50,${g | 0},20,0.8)`;
+          ctx.fillRect(x + px, y + py, 1, 1);
+        }
+      }
+    }
+    // 几根突出的草叶
+    drawPixelRect(ctx, x + 3, y + 0, 1, 8, 'rgba(60,160,30,0.9)');
+    drawPixelRect(ctx, x + 7, y + 1, 1, 7, 'rgba(50,140,25,0.9)');
+    drawPixelRect(ctx, x + 11, y + 0, 1, 9, 'rgba(55,150,28,0.9)');
+  });
+
+  // 0,3 - 抱枕顶面（紫色软垫）
+  drawTile(ctx, 0, 3, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [150, 100, 200], 15);
+    // 中心凹陷
+    drawPixelRect(ctx, x + 4, y + 4, 8, 8, 'rgba(130,80,180,0.8)');
+    drawPixelRect(ctx, x + 5, y + 5, 6, 6, 'rgba(140,90,190,0.6)');
+  });
+
+  // 1,3 - 抱枕侧面（紫色+褶皱）
+  drawTile(ctx, 1, 3, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [145, 95, 195], 15);
+    // 褶皱线
+    for (let py = 0; py < TILE_SIZE; py += 4) {
+      drawPixelRect(ctx, x, y + py, TILE_SIZE, 1, 'rgba(120,70,170,0.4)');
+    }
+    // 边角圆润感
+    drawPixelRect(ctx, x, y, 2, 2, 'rgba(160,110,210,0.5)');
+    drawPixelRect(ctx, x + 14, y, 2, 2, 'rgba(160,110,210,0.5)');
+    drawPixelRect(ctx, x, y + 14, 2, 2, 'rgba(160,110,210,0.5)');
+    drawPixelRect(ctx, x + 14, y + 14, 2, 2, 'rgba(160,110,210,0.5)');
   });
 
   const texture = new THREE.CanvasTexture(canvas);

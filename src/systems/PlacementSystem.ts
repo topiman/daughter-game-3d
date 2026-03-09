@@ -6,6 +6,7 @@ import { InventorySystem } from './InventorySystem';
 import { BlockType, ItemCategory, ITEMS } from '../data/items';
 import { CONFIG } from '../data/config';
 import { makeAABB, aabbOverlap } from '../engine/Physics';
+import { canPlaceSnowman } from './SnowmanSystem';
 
 export class PlacementSystem {
   private previewMesh: THREE.Mesh;
@@ -16,6 +17,10 @@ export class PlacementSystem {
   hitBlock: { x: number; y: number; z: number } | null = null;
   placeBlock: { x: number; y: number; z: number } | null = null;
   canPlace = false;
+  // 天气引用，外部设置
+  currentWeather: string = 'clear';
+  // 最后放置失败消息
+  lastPlaceError: string = '';
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -114,6 +119,12 @@ export class PlacementSystem {
     // 不可破坏：水方块、基岩
     if (block === BlockType.WATER_BLOCK || block === BlockType.BEDROCK) return false;
     
+    // TALL_GRASS 可破坏但不回收
+    if (block === BlockType.TALL_GRASS) {
+      world.setBlock(x, y, z, BlockType.AIR);
+      return true;
+    }
+
     // 回收到物品栏
     let itemId: string | null = null;
     switch (block) {
@@ -128,6 +139,8 @@ export class PlacementSystem {
       case BlockType.TENT: itemId = 'tent'; break;
       case BlockType.SHOE_CABINET: itemId = 'shoe_cabinet'; break;
       case BlockType.WARDROBE: itemId = 'wardrobe'; break;
+      case BlockType.SNOWMAN: itemId = 'snowman'; break;
+      case BlockType.PILLOW: itemId = 'pillow'; break;
     }
     
     if (itemId && ITEMS[itemId]) {
@@ -145,6 +158,12 @@ export class PlacementSystem {
     const item = inventory.getSelectedItem();
     if (!item) return false;
     if (item.category !== ItemCategory.BLOCK && item.category !== ItemCategory.FURNITURE) return false;
+
+    // 雪人只能在下雪天放置
+    if (item.blockType === BlockType.SNOWMAN && !canPlaceSnowman(this.currentWeather)) {
+      this.lastPlaceError = '❄️ 只有下雪天才能堆雪人哦！';
+      return false;
+    }
     
     const { x, y, z } = this.placeBlock;
     

@@ -3,6 +3,8 @@ import { CONFIG } from '../data/config';
 
 export class TimeSystem {
   private elapsedTime = 0; // 秒
+  get elapsed(): number { return this.elapsedTime; }
+  set elapsed(v: number) { this.elapsedTime = v; }
   gameHour = 8; // 开始于早上8点
   gameDay = 1;
   isNight = false;

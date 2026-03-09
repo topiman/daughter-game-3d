@@ -98,4 +98,21 @@ export class InventorySystem {
     const item = this.getSelectedItem();
     return item?.category === ItemCategory.BLOCK || item?.category === ItemCategory.FURNITURE;
   }
+
+  // 存档序列化
+  toSaveFormat(): Array<{ itemId: string; count: number } | null> {
+    return this.slots.map(s => s.item ? { itemId: s.item.id, count: s.count } : null);
+  }
+
+  // 从存档恢复
+  loadFromSave(slots: Array<{ itemId: string; count: number } | null>): void {
+    for (let i = 0; i < this.slots.length && i < slots.length; i++) {
+      const saved = slots[i];
+      if (saved && ITEMS[saved.itemId]) {
+        this.slots[i] = { item: ITEMS[saved.itemId], count: saved.count };
+      } else {
+        this.slots[i] = { item: null, count: 0 };
+      }
+    }
+  }
 }

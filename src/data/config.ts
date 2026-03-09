@@ -95,4 +95,19 @@ export const CONFIG = {
 
   // 收纳
   STORAGE_SLOTS: 4,              // 每个收纳家具的格数
+
+  // === P2 新增 ===
+
+  // 雪人
+  SNOWMAN_MELT_TIME: 120,        // 融化时间（秒）
+
+  // 草
+  GRASS_SPAWN_CHANCE: 0.15,      // 草生成概率
+
+  // 抱枕增强
+  PILLOW_BED_BOOST: 35,          // 有抱枕时床回血35%
+  PILLOW_SOFA_BOOST: 0.3,        // 有抱枕时沙发减缓30%
+
+  // 存档
+  AUTOSAVE_INTERVAL: 60,         // 自动存档间隔（秒）
 };

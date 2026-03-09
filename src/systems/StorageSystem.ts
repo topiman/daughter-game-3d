@@ -1,5 +1,5 @@
 // 收纳家具存储系统
-import { ItemDef } from '../data/items';
+import { ItemDef, ITEMS } from '../data/items';
 import { CONFIG } from '../data/config';
 
 export interface StorageSlot {
@@ -59,5 +59,27 @@ export class StorageSystem {
    */
   removeStorage(x: number, y: number, z: number): void {
     this.storages.delete(this.key(x, y, z));
+  }
+
+  // 存档序列化
+  toSaveFormat(): Record<string, Array<{ itemId: string; count: number } | null>> {
+    const result: Record<string, Array<{ itemId: string; count: number } | null>> = {};
+    for (const [key, slots] of this.storages.entries()) {
+      result[key] = slots.map(s => s.item ? { itemId: s.item.id, count: 1 } : null);
+    }
+    return result;
+  }
+
+  // 从存档恢复
+  loadFromSave(data: Record<string, Array<{ itemId: string; count: number } | null>>): void {
+    for (const [key, slots] of Object.entries(data)) {
+      const storageSlots: StorageSlot[] = slots.map(s => {
+        if (s && ITEMS[s.itemId]) {
+          return { item: ITEMS[s.itemId] };
+        }
+        return { item: null };
+      });
+      this.storages.set(key, storageSlots);
+    }
   }
 }

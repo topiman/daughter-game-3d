@@ -4,6 +4,7 @@ import { Player } from '../entities/Player';
 import { InventorySystem } from '../systems/InventorySystem';
 import { TimeSystem } from '../systems/TimeSystem';
 import { getCategoryColor, ItemCategory } from '../data/items';
+import { isTouchDevice } from './TouchControls';
 
 export class HUD {
   private container: HTMLDivElement;
@@ -99,14 +100,16 @@ export class HUD {
       display: flex; gap: 4px;
     `;
     
+    const slotSize = (typeof window !== 'undefined' && isTouchDevice()) ? 56 : 50;
     for (let i = 0; i < CONFIG.HOTBAR_SIZE; i++) {
       const slot = document.createElement('div');
       slot.style.cssText = `
-        width: 50px; height: 50px; background: rgba(0,0,0,0.6);
+        width: ${slotSize}px; height: ${slotSize}px; background: rgba(0,0,0,0.6);
         border: 2px solid #555; border-radius: 4px; position: relative;
         display: flex; align-items: center; justify-content: center;
         color: white; font-size: 11px; text-align: center;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        pointer-events: auto;
       `;
       // 快捷键编号
       const num = document.createElement('div');
