@@ -11,6 +11,7 @@ export class Mutant {
   mesh: THREE.Group;
   private lastAttackTime = 0;
   private grounded = false;
+  private knockbackTimer = 0; // 击退期间不执行AI移动
 
   constructor(x: number, y: number, z: number) {
     this.position = new THREE.Vector3(x, y, z);
@@ -91,33 +92,38 @@ export class Mutant {
   }
 
   update(dt: number, player: Player, physics: Physics): void {
-    // AI：朝玩家移动
-    const toPlayer = new THREE.Vector3().subVectors(player.position, this.position);
-    toPlayer.y = 0;
-    const dist = toPlayer.length();
-
-    if (dist > 0.5) {
-      toPlayer.normalize();
-      const speed = CONFIG.PLAYER_SPEED * CONFIG.MUTANT_SPEED_RATIO;
-      this.velocity.x = toPlayer.x * speed;
-      this.velocity.z = toPlayer.z * speed;
-
-      // 朝向玩家
-      this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
+    // 击退冷却
+    if (this.knockbackTimer > 0) {
+      this.knockbackTimer -= dt;
+      // 击退期间只处理物理（重力+碰撞），不执行AI移动
     } else {
-      this.velocity.x = 0;
-      this.velocity.z = 0;
-    }
+      // AI：朝玩家移动
+      const toPlayer = new THREE.Vector3().subVectors(player.position, this.position);
+      toPlayer.y = 0;
+      const dist = toPlayer.length();
 
-    // 遇方块尝试跳跃
-    if (this.grounded) {
-      // 检查前方是否有方块
-      const frontX = this.position.x + toPlayer.x * 0.8;
-      const frontZ = this.position.z + toPlayer.z * 0.8;
-      const frontBox = makeAABB(frontX, this.position.y, frontZ, 0.6, 1.8, 0.6);
-      if (physics.collidesWithWorld(frontBox)) {
-        this.velocity.y = CONFIG.PLAYER_JUMP_VELOCITY * 0.8;
-        this.grounded = false;
+      if (dist > 0.5) {
+        toPlayer.normalize();
+        const speed = CONFIG.PLAYER_SPEED * CONFIG.MUTANT_SPEED_RATIO;
+        this.velocity.x = toPlayer.x * speed;
+        this.velocity.z = toPlayer.z * speed;
+
+        // 朝向玩家
+        this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
+      } else {
+        this.velocity.x = 0;
+        this.velocity.z = 0;
+      }
+
+      // 遇方块尝试跳跃
+      if (this.grounded) {
+        const frontX = this.position.x + (dist > 0.5 ? toPlayer.x * 0.8 : 0);
+        const frontZ = this.position.z + (dist > 0.5 ? toPlayer.z * 0.8 : 0);
+        const frontBox = makeAABB(frontX, this.position.y, frontZ, 0.6, 1.8, 0.6);
+        if (physics.collidesWithWorld(frontBox)) {
+          this.velocity.y = CONFIG.PLAYER_JUMP_VELOCITY * 0.8;
+          this.grounded = false;
+        }
       }
     }
 
@@ -136,9 +142,10 @@ export class Mutant {
     // 更新模型位置
     this.mesh.position.copy(this.position);
 
-    // 攻击玩家
+    // 攻击玩家（击退期间不攻击）
+    const attackDist = new THREE.Vector3().subVectors(player.position, this.position).length();
     const now = performance.now() / 1000;
-    if (dist < 1.5 && now - this.lastAttackTime > CONFIG.MUTANT_ATTACK_INTERVAL) {
+    if (this.knockbackTimer <= 0 && attackDist < 1.5 && now - this.lastAttackTime > CONFIG.MUTANT_ATTACK_INTERVAL) {
       player.takeDamage(CONFIG.MUTANT_DAMAGE);
       this.lastAttackTime = now;
     }
@@ -148,10 +155,11 @@ export class Mutant {
     this.hp = Math.max(0, this.hp - amount);
     // 击退效果
     if (knockbackDir) {
-      const force = 8;
+      const force = 10;
       this.velocity.x = knockbackDir.x * force;
-      this.velocity.y = 3; // 稍微弹起
+      this.velocity.y = 4; // 弹起
       this.velocity.z = knockbackDir.z * force;
+      this.knockbackTimer = 0.5; // 0.5秒内不执行AI移动，让击退生效
     }
   }
 
