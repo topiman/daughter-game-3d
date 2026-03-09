@@ -149,7 +149,7 @@ class Game {
       this.renderer.scene.remove(this.worldMesh);
       this.worldMesh.geometry.dispose();
     }
-    this.worldMesh = ChunkMesher.buildGreedyMesh(this.world, this.worldMaterial);
+    this.worldMesh = ChunkMesher.buildMesh(this.world, this.worldMaterial);
     this.renderer.scene.add(this.worldMesh);
     this.needsRemesh = false;
   }

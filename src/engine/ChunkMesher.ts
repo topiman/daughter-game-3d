@@ -16,11 +16,12 @@ const FACES = [
 ];
 
 export class ChunkMesher {
-  // 生成整个世界的 mesh（Greedy Meshing 简化版：面合并）
+  // 生成整个世界的 mesh — 逐面渲染 + 面着色
   static buildMesh(world: VoxelWorld, material: THREE.Material): THREE.Mesh {
     const positions: number[] = [];
     const normals: number[] = [];
     const uvs: number[] = [];
+    const colors: number[] = [];
     const indices: number[] = [];
     let vertexCount = 0;
 
@@ -45,10 +46,11 @@ export class ChunkMesher {
             const uvPos = blockUV[face.uvFace];
             const [u0, v0, u1, v1] = getTileUV(uvPos[0], uvPos[1]);
 
-            // 添加4个顶点
+            // 添加4个顶点 + 顶点颜色（面着色）
             for (const corner of face.corners) {
               positions.push(x + corner[0], y + corner[1], z + corner[2]);
               normals.push(face.dir[0], face.dir[1], face.dir[2]);
+              colors.push(face.brightness, face.brightness, face.brightness);
             }
 
             // UV
@@ -69,6 +71,7 @@ export class ChunkMesher {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geometry.setIndex(indices);
 
     return new THREE.Mesh(geometry, material);
