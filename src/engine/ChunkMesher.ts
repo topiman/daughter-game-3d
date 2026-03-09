@@ -5,13 +5,14 @@ import { BlockType } from '../data/items';
 import { BLOCK_UVS, getTileUV } from '../data/textures';
 
 // 六个面方向：右左上下前后
+// brightness: 每个面方向的亮度系数（模拟 Minecraft 风格的面着色）
 const FACES = [
-  { dir: [1, 0, 0], corners: [[1,0,0],[1,1,0],[1,1,1],[1,0,1]], uvFace: 'side' as const },   // +X
-  { dir: [-1, 0, 0], corners: [[0,0,1],[0,1,1],[0,1,0],[0,0,0]], uvFace: 'side' as const },  // -X
-  { dir: [0, 1, 0], corners: [[0,1,1],[1,1,1],[1,1,0],[0,1,0]], uvFace: 'top' as const },    // +Y
-  { dir: [0, -1, 0], corners: [[0,0,0],[1,0,0],[1,0,1],[0,0,1]], uvFace: 'bottom' as const },// -Y
-  { dir: [0, 0, 1], corners: [[0,0,1],[1,0,1],[1,1,1],[0,1,1]], uvFace: 'side' as const },   // +Z
-  { dir: [0, 0, -1], corners: [[1,0,0],[0,0,0],[0,1,0],[1,1,0]], uvFace: 'side' as const },  // -Z
+  { dir: [1, 0, 0], corners: [[1,0,0],[1,1,0],[1,1,1],[1,0,1]], uvFace: 'side' as const, brightness: 0.6 },   // +X
+  { dir: [-1, 0, 0], corners: [[0,0,1],[0,1,1],[0,1,0],[0,0,0]], uvFace: 'side' as const, brightness: 0.6 },  // -X
+  { dir: [0, 1, 0], corners: [[0,1,1],[1,1,1],[1,1,0],[0,1,0]], uvFace: 'top' as const, brightness: 1.0 },    // +Y 顶面最亮
+  { dir: [0, -1, 0], corners: [[0,0,0],[1,0,0],[1,0,1],[0,0,1]], uvFace: 'bottom' as const, brightness: 0.4 },// -Y 底面最暗
+  { dir: [0, 0, 1], corners: [[0,0,1],[1,0,1],[1,1,1],[0,1,1]], uvFace: 'side' as const, brightness: 0.8 },   // +Z
+  { dir: [0, 0, -1], corners: [[1,0,0],[0,0,0],[0,1,0],[1,1,0]], uvFace: 'side' as const, brightness: 0.8 },  // -Z
 ];
 
 export class ChunkMesher {
@@ -78,6 +79,7 @@ export class ChunkMesher {
     const positions: number[] = [];
     const normals: number[] = [];
     const uvs: number[] = [];
+    const colors: number[] = [];
     const indices: number[] = [];
     let vertexCount = 0;
 
@@ -198,6 +200,7 @@ export class ChunkMesher {
             for (const c of corners) {
               positions.push(c[0], c[1], c[2]);
               normals.push(face.dir[0], face.dir[1], face.dir[2]);
+              colors.push(face.brightness, face.brightness, face.brightness);
             }
 
             // UV tiling
@@ -234,6 +237,7 @@ export class ChunkMesher {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geometry.setIndex(indices);
 
     return new THREE.Mesh(geometry, material);

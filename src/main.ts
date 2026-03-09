@@ -59,7 +59,7 @@ class Game {
     const atlas = createTextureAtlas();
     atlas.wrapS = THREE.RepeatWrapping;
     atlas.wrapT = THREE.RepeatWrapping;
-    this.worldMaterial = new THREE.MeshLambertMaterial({ map: atlas });
+    this.worldMaterial = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true });
 
     // 世界
     this.world = new VoxelWorld();
