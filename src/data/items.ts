@@ -30,6 +30,8 @@ export interface ItemDef {
   speedBoost?: number; // 秒
   sizeX?: number; // 占格宽（默认1）
   sizeZ?: number; // 占格深（默认1）
+  icon: string; // 物品栏显示的 emoji 图标
+  iconColor: string; // 物品栏背景色
 }
 
 export const ITEMS: Record<string, ItemDef> = {
@@ -39,7 +41,9 @@ export const ITEMS: Record<string, ItemDef> = {
     category: ItemCategory.SPECIAL,
     stackable: false,
     maxStack: 1,
-    weight: 0, // 不从水方块获取
+    weight: 0,
+    icon: '⚔️',
+    iconColor: '#4a6fa5',
   },
   grass_block: {
     id: 'grass_block',
@@ -49,6 +53,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     maxStack: 64,
     weight: 30,
+    icon: '🟩',
+    iconColor: '#4c9900',
   },
   dirt_block: {
     id: 'dirt_block',
@@ -58,6 +64,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     maxStack: 64,
     weight: 30,
+    icon: '🟫',
+    iconColor: '#8B6914',
   },
   wood_block: {
     id: 'wood_block',
@@ -67,6 +75,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: true,
     maxStack: 64,
     weight: 15,
+    icon: '🪵',
+    iconColor: '#78501e',
   },
   bed: {
     id: 'bed',
@@ -78,6 +88,8 @@ export const ITEMS: Record<string, ItemDef> = {
     weight: 5,
     sizeX: 2,
     sizeZ: 1,
+    icon: '🛏️',
+    iconColor: '#c83c3c',
   },
   sofa: {
     id: 'sofa',
@@ -87,6 +99,8 @@ export const ITEMS: Record<string, ItemDef> = {
     stackable: false,
     maxStack: 1,
     weight: 5,
+    icon: '🛋️',
+    iconColor: '#4696a0',
   },
   bread: {
     id: 'bread',
@@ -96,6 +110,8 @@ export const ITEMS: Record<string, ItemDef> = {
     maxStack: 16,
     weight: 30,
     hungerRestore: 30,
+    icon: '🍞',
+    iconColor: '#d4a854',
   },
   noodle: {
     id: 'noodle',
@@ -105,6 +121,8 @@ export const ITEMS: Record<string, ItemDef> = {
     maxStack: 16,
     weight: 15,
     hungerRestore: 40,
+    icon: '🍜',
+    iconColor: '#e8c84a',
   },
   icecream: {
     id: 'icecream',
@@ -115,6 +133,8 @@ export const ITEMS: Record<string, ItemDef> = {
     weight: 15,
     hungerRestore: 20,
     speedBoost: 3,
+    icon: '🍦',
+    iconColor: '#f0c0d0',
   },
   cake: {
     id: 'cake',
@@ -124,6 +144,8 @@ export const ITEMS: Record<string, ItemDef> = {
     maxStack: 16,
     weight: 5,
     hungerRestore: 50,
+    icon: '🍰',
+    iconColor: '#f5a0b0',
   },
 };
 

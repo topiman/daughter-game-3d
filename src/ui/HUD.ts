@@ -159,22 +159,45 @@ export class HUD {
         slot.style.background = 'rgba(0,0,0,0.6)';
       }
 
-      // 物品名和数量
-      const nameEl = slot.querySelector('.item-name') as HTMLDivElement || document.createElement('div');
-      nameEl.className = 'item-name';
-      nameEl.style.cssText = 'font-size: 10px; line-height: 1.2;';
-      
+      // 物品图标
+      let iconEl = slot.querySelector('.item-icon') as HTMLDivElement;
+      if (!iconEl) {
+        iconEl = document.createElement('div');
+        iconEl.className = 'item-icon';
+        iconEl.style.cssText = 'font-size: 24px; line-height: 1; user-select: none;';
+        slot.appendChild(iconEl);
+      }
+
+      // 物品名称
+      let nameEl = slot.querySelector('.item-name') as HTMLDivElement;
+      if (!nameEl) {
+        nameEl = document.createElement('div');
+        nameEl.className = 'item-name';
+        nameEl.style.cssText = 'font-size: 9px; line-height: 1; position: absolute; bottom: 2px; left: 0; right: 0; text-align: center;';
+        slot.appendChild(nameEl);
+      }
+
+      // 数量
+      let countEl = slot.querySelector('.item-count') as HTMLDivElement;
+      if (!countEl) {
+        countEl = document.createElement('div');
+        countEl.className = 'item-count';
+        countEl.style.cssText = 'font-size: 10px; font-weight: bold; position: absolute; bottom: 1px; right: 3px; color: #fff;';
+        slot.appendChild(countEl);
+      }
+
       if (invSlot.item) {
+        iconEl.textContent = invSlot.item.icon;
         nameEl.textContent = invSlot.item.name;
-        if (invSlot.count > 1) {
-          nameEl.textContent += ` ×${invSlot.count}`;
+        countEl.textContent = invSlot.count > 1 ? `${invSlot.count}` : '';
+        // 非选中时用物品主题色微调背景
+        if (i !== inventory.selectedIndex) {
+          slot.style.background = `${invSlot.item.iconColor}33`; // 20% 透明度
         }
       } else {
+        iconEl.textContent = '';
         nameEl.textContent = '';
-      }
-      
-      if (!slot.querySelector('.item-name')) {
-        slot.appendChild(nameEl);
+        countEl.textContent = '';
       }
     }
   }
