@@ -205,8 +205,8 @@ export class Player {
     if (this.isFirstPerson) {
       this.bodyYaw = this.yaw;
     } else if (moveDir.lengthSq() > 0) {
-      // 计算移动方向的角度
-      const targetBodyYaw = Math.atan2(-moveDir.x, -moveDir.z);
+      // 计算移动方向的角度（脸朝移动方向）
+      const targetBodyYaw = Math.atan2(moveDir.x, moveDir.z);
       // 平滑转身
       let diff = targetBodyYaw - this.bodyYaw;
       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -228,9 +228,9 @@ export class Player {
       if (this.attackAnimTime < animDuration) {
         // 右臂+剑向前挥动
         const t = this.attackAnimTime / animDuration;
-        const swing = Math.sin(t * Math.PI) * -1.5; // 前挥弧度
+        const swing = Math.sin(t * Math.PI) * -2.5; // 大幅前挥
         this.rightArm.rotation.x = swing;
-        this.swordMesh.rotation.x = swing * 0.5;
+        this.swordMesh.rotation.x = swing * 0.6;
       } else {
         this.isAttacking = false;
         this.attackAnimTime = 0;
