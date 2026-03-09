@@ -227,8 +227,8 @@ export class TouchControls {
         const dx = touch.clientX - this.lookLastX;
         const dy = touch.clientY - this.lookLastY;
         if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-          this.lookDX += dx * 0.8;
-          this.lookDY += dy * 0.8;
+          this.lookDX += dx * 1.5;
+          this.lookDY += dy * 1.5;
         }
         this.lookLastX = touch.clientX;
         this.lookLastY = touch.clientY;
