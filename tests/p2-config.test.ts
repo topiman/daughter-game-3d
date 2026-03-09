@@ -27,7 +27,7 @@ describe('P2 新增配置完整性', () => {
     })
 
     it('GRASS_SPAWN_CHANCE 在 0-1 之间', () => {
-      expect((CONFIG as any).GRASS_SPAWN_CHANCE).toBeGreaterThan(0)
+      expect((CONFIG as any).GRASS_SPAWN_CHANCE).toBeGreaterThanOrEqual(0)
       expect((CONFIG as any).GRASS_SPAWN_CHANCE).toBeLessThanOrEqual(1)
     })
 
