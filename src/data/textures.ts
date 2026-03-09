@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { BlockType } from './items';
 
 const TILE_SIZE = 16;
-const ATLAS_TILES = 8; // 8x8 grid
+const ATLAS_TILES = 8; // 8x8 grid — 64 tiles max
 const ATLAS_SIZE = TILE_SIZE * ATLAS_TILES;
 
 // 纹理在图集中的位置 [col, row]
@@ -16,6 +16,12 @@ export const BLOCK_UVS: Record<number, { top: [number, number]; side: [number, n
   [BlockType.WATER_BLOCK]: { top: [6, 0], side: [6, 0], bottom: [6, 0] },
   [BlockType.BED]:   { top: [7, 0], side: [7, 1], bottom: [3, 0] },
   [BlockType.SOFA]:  { top: [0, 1], side: [1, 1], bottom: [3, 0] },
+  [BlockType.TOILET]:      { top: [2, 1], side: [3, 1], bottom: [3, 0] },
+  [BlockType.LAMP]:        { top: [4, 1], side: [5, 1], bottom: [3, 0] },
+  [BlockType.NIGHTLIGHT]:  { top: [6, 1], side: [6, 1], bottom: [3, 0] },
+  [BlockType.TENT]:        { top: [7, 2], side: [0, 2], bottom: [3, 0] },
+  [BlockType.SHOE_CABINET]:{ top: [1, 2], side: [2, 2], bottom: [3, 0] },
+  [BlockType.WARDROBE]:    { top: [3, 2], side: [4, 2], bottom: [3, 0] },
 };
 
 function drawPixelRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
@@ -212,6 +218,102 @@ export function createTextureAtlas(): THREE.CanvasTexture {
         ctx.fillRect(x + px, y + py, 1, 1);
       }
     }
+  });
+
+  // 2,1 - 马桶顶面（白色瓷器+水）
+  drawTile(ctx, 2, 1, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [230, 230, 235], 8);
+    // 水面
+    drawPixelRect(ctx, x + 4, y + 4, 8, 8, '#aaddff');
+    drawPixelRect(ctx, x + 5, y + 5, 6, 6, '#88ccee');
+  });
+
+  // 3,1 - 马桶侧面（白色+底座）
+  drawTile(ctx, 3, 1, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [230, 230, 235], 8);
+    drawPixelRect(ctx, x, y + 12, TILE_SIZE, 4, '#ddd');
+    drawPixelRect(ctx, x + 2, y + 0, 12, 3, '#eee'); // 水箱
+  });
+
+  // 4,1 - 路灯顶面（发光黄色）
+  drawTile(ctx, 4, 1, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [255, 200, 50], 20);
+    drawPixelRect(ctx, x + 5, y + 5, 6, 6, '#fff8dc');
+  });
+
+  // 5,1 - 路灯侧面（灯杆+灯罩）
+  drawTile(ctx, 5, 1, (ctx, x, y) => {
+    // 灯罩（上部，暖黄色）
+    for (let py = 0; py < 6; py++) {
+      for (let px = 2; px < 14; px++) {
+        const v = (Math.random() - 0.5) * 15;
+        ctx.fillStyle = `rgb(${255},${200 + v|0},${50 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 灯杆（下部，深灰色）
+    drawPixelRect(ctx, x + 6, y + 6, 4, 10, '#555');
+    drawPixelRect(ctx, x + 7, y + 7, 2, 9, '#666');
+  });
+
+  // 6,1 - 小夜灯（柔白发光）
+  drawTile(ctx, 6, 1, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [255, 240, 220], 10);
+    // 中心发光
+    drawPixelRect(ctx, x + 4, y + 3, 8, 10, '#fff8e8');
+    drawPixelRect(ctx, x + 5, y + 4, 6, 8, '#fffff0');
+  });
+
+  // 7,2 - 帐篷顶面（橙棕色三角帆布）
+  drawTile(ctx, 7, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [210, 140, 60], 15);
+    // 交叉线
+    for (let i = 0; i < TILE_SIZE; i++) {
+      ctx.fillStyle = '#8B5A2B';
+      ctx.fillRect(x + i, y + i, 1, 1);
+      ctx.fillRect(x + TILE_SIZE - 1 - i, y + i, 1, 1);
+    }
+  });
+
+  // 0,2 - 帐篷侧面（三角形帆布）
+  drawTile(ctx, 0, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [190, 120, 50], 15);
+    // 入口（深色倒三角）
+    for (let py = 4; py < TILE_SIZE; py++) {
+      const w = Math.floor((py - 4) * 0.8);
+      drawPixelRect(ctx, x + 8 - w, y + py, w * 2, 1, '#2a1a0a');
+    }
+  });
+
+  // 1,2 - 鞋柜顶面（木色）
+  drawTile(ctx, 1, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [160, 120, 70], 12);
+  });
+
+  // 2,2 - 鞋柜侧面（木色+格子）
+  drawTile(ctx, 2, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [140, 100, 55], 12);
+    // 格子隔板
+    drawPixelRect(ctx, x, y + 7, TILE_SIZE, 1, '#8B6914');
+    drawPixelRect(ctx, x + 7, y, 1, TILE_SIZE, '#8B6914');
+    // 把手
+    drawPixelRect(ctx, x + 12, y + 3, 2, 2, '#aaa');
+    drawPixelRect(ctx, x + 12, y + 11, 2, 2, '#aaa');
+  });
+
+  // 3,2 - 衣柜顶面（深木色）
+  drawTile(ctx, 3, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [110, 70, 40], 10);
+  });
+
+  // 4,2 - 衣柜侧面（深木色+门）
+  drawTile(ctx, 4, 2, (ctx, x, y) => {
+    drawNoise(ctx, x, y, [100, 60, 30], 10);
+    // 门缝
+    drawPixelRect(ctx, x + 7, y + 1, 1, 14, '#3a2210');
+    // 把手
+    drawPixelRect(ctx, x + 5, y + 7, 2, 2, '#c0a060');
+    drawPixelRect(ctx, x + 9, y + 7, 2, 2, '#c0a060');
   });
 
   const texture = new THREE.CanvasTexture(canvas);

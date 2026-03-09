@@ -69,4 +69,30 @@ export const CONFIG = {
   FOOD_ICECREAM_HUNGER: 20,
   FOOD_CAKE_HUNGER: 50,
   ICECREAM_SPEED_DURATION: 3,
+
+  // === P1 新增 ===
+
+  // 天气
+  WEATHER_CHANCE: 0.3,           // 每天触发概率
+  WEATHER_DURATION: 120,         // 天气持续秒数（现实时间）
+
+  // 家具
+  BED_HP_RESTORE: 20,            // 床恢复 20% HP
+  SOFA_HUNGER_SLOW_DURATION: 30, // 沙发效果持续 30 秒
+  SOFA_HUNGER_SLOW_RATE: 0.5,    // 饥饿消耗速度 ×0.5
+
+  // 小狗
+  DOG_FOLLOW_DIST: 2.5,          // 跟随距离
+  DOG_BARK_RANGE: 8,             // 吠叫触发范围
+  DOG_SPEED: 4,                  // 移动速度
+
+  // 照明
+  LAMP_RADIUS: 5,                // 路灯光照半径
+  NIGHTLIGHT_RADIUS: 3,          // 小夜灯光照半径
+
+  // 帐篷
+  TENT_SAFE_RADIUS: 2,           // 帐篷庇护范围
+
+  // 收纳
+  STORAGE_SLOTS: 4,              // 每个收纳家具的格数
 };

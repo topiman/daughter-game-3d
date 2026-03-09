@@ -122,6 +122,12 @@ export class PlacementSystem {
       case BlockType.WOOD: itemId = 'wood_block'; break;
       case BlockType.BED: itemId = 'bed'; break;
       case BlockType.SOFA: itemId = 'sofa'; break;
+      case BlockType.TOILET: itemId = 'toilet'; break;
+      case BlockType.LAMP: itemId = 'lamp'; break;
+      case BlockType.NIGHTLIGHT: itemId = 'nightlight'; break;
+      case BlockType.TENT: itemId = 'tent'; break;
+      case BlockType.SHOE_CABINET: itemId = 'shoe_cabinet'; break;
+      case BlockType.WARDROBE: itemId = 'wardrobe'; break;
     }
     
     if (itemId && ITEMS[itemId]) {

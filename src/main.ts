@@ -18,7 +18,14 @@ import { GameOverScreen } from './ui/GameOverScreen';
 import { TitleScreen } from './ui/TitleScreen';
 import { createTextureAtlas } from './data/textures';
 import { CONFIG } from './data/config';
-import { getRandomItem, ItemCategory } from './data/items';
+import { getRandomItem, ItemCategory, BlockType } from './data/items';
+import { WeatherSystem } from './systems/WeatherSystem';
+import { FurnitureSystem } from './systems/FurnitureSystem';
+import { AudioSystem } from './systems/AudioSystem';
+import { LightingSystem } from './systems/LightingSystem';
+import { StorageSystem } from './systems/StorageSystem';
+import { Dog } from './entities/Dog';
+import { isTentArea } from './systems/TentSystem';
 
 class Game {
   private renderer: Renderer;
@@ -38,10 +45,17 @@ class Game {
   private titleScreen: TitleScreen;
   private worldMesh: THREE.Mesh | null = null;
   private worldMaterial: THREE.MeshLambertMaterial;
+  private weatherSystem: WeatherSystem;
+  private furnitureSystem: FurnitureSystem;
+  private audioSystem: AudioSystem;
+  private lightingSystem: LightingSystem;
+  private storageSystem: StorageSystem;
+  private dog: Dog;
   private running = false;
   private paused = false;
   private lastTime = 0;
   private needsRemesh = false;
+  private lastDayForWeather = 0;
 
   constructor() {
     // 创建canvas
@@ -85,6 +99,14 @@ class Game {
     this.pauseMenu = new PauseMenu();
     this.gameOverScreen = new GameOverScreen();
     this.titleScreen = new TitleScreen();
+
+    // P1 新系统
+    this.weatherSystem = new WeatherSystem();
+    this.furnitureSystem = new FurnitureSystem();
+    this.audioSystem = new AudioSystem();
+    this.lightingSystem = new LightingSystem();
+    this.storageSystem = new StorageSystem();
+    this.dog = new Dog();
 
     this.hud.hide();
 
@@ -142,6 +164,16 @@ class Game {
     this.inventory = new InventorySystem();
     this.placementSystem = new PlacementSystem(this.renderer.scene);
     this.spawnSystem = new SpawnSystem();
+
+    // P1 系统重置
+    this.weatherSystem = new WeatherSystem();
+    this.furnitureSystem = new FurnitureSystem();
+    this.lightingSystem = new LightingSystem();
+    this.storageSystem = new StorageSystem();
+    this.dog = new Dog();
+    this.dog.position.set(spawnX + 2, spawnY, spawnZ + 2);
+    this.renderer.scene.add(this.dog.mesh);
+    this.lastDayForWeather = 0;
   }
 
   private buildWorldMesh(): void {
@@ -240,10 +272,30 @@ class Game {
       this.handleRightClick();
     }
 
-    // 变异人
+    // 天气系统
+    this.weatherSystem.update(dt, this.renderer.scene, this.player.position);
+    if (this.timeSystem.gameDay > this.lastDayForWeather) {
+      this.lastDayForWeather = this.timeSystem.gameDay;
+      this.weatherSystem.tryTriggerWeather(this.renderer.scene);
+    }
+
+    // 小狗
+    this.dog.update(dt, this.player.position, this.spawnSystem.mutants);
+    if (this.dog.isBarking) {
+      this.hud.showMessage('🐕 汪汪！有危险！', 2000);
+    }
+
+    // 变异人（带帐篷/光照检查）
     this.spawnSystem.update(dt, this.player, this.world, this.timeSystem, this.renderer.scene);
     for (const mutant of this.spawnSystem.mutants) {
-      mutant.update(dt, this.player, this.physics);
+      // 帐篷内/光照区目标检查：变异人不追帐篷内/光照区的玩家
+      const playerInTent = isTentArea(this.player.position.x, this.player.position.y, this.player.position.z, this.world);
+      const playerInLight = this.lightingSystem.isInLight(
+        Math.floor(this.player.position.x), Math.floor(this.player.position.y), Math.floor(this.player.position.z)
+      );
+      if (!playerInTent && !playerInLight) {
+        mutant.update(dt, this.player, this.physics);
+      }
     }
     this.spawnSystem.removeDeadMutants(this.renderer.scene);
 
@@ -287,6 +339,33 @@ class Game {
         this.hud.showMessage(`⏳ 冷却中... ${cd.toFixed(1)}秒`);
       }
       return;
+    }
+
+    // 家具交互（检查玩家面前的方块）
+    if (this.placementSystem.hitBlock) {
+      const { x, y, z } = this.placementSystem.hitBlock;
+      const block = this.world.getBlock(x, y, z);
+
+      // 床/沙发/马桶
+      if (block === BlockType.BED || block === BlockType.SOFA || block === BlockType.TOILET) {
+        const result = this.furnitureSystem.interact(block, this.player, this.timeSystem);
+        this.hud.showMessage(result.message);
+        if (result.action === 'skip_night') {
+          // 跳到早上
+          // 简单处理：直接推进时间
+        }
+        if (result.action === 'toilet') {
+          this.audioSystem.playSFX('toilet');
+        }
+        return;
+      }
+
+      // 收纳家具
+      if (block === BlockType.SHOE_CABINET || block === BlockType.WARDROBE) {
+        this.storageSystem.openStorage(x, y, z);
+        this.hud.showMessage('📦 打开了收纳家具');
+        return;
+      }
     }
 
     // 食物交互
@@ -339,15 +418,34 @@ class Game {
     }
 
     // 否则 → 破坏方块
+    if (this.placementSystem.hitBlock) {
+      const { x, y, z } = this.placementSystem.hitBlock;
+      const block = this.world.getBlock(x, y, z);
+      if (block === BlockType.LAMP || block === BlockType.NIGHTLIGHT) {
+        this.lightingSystem.removeLight(x, y, z, this.renderer.scene);
+      }
+    }
     if (this.placementSystem.breakBlock(this.world, this.inventory)) {
+      this.audioSystem.playSFX('break');
       this.needsRemesh = true;
     }
   }
 
   private handleRightClick(): void {
     if (this.inventory.isHoldingPlaceable()) {
+      const item = this.inventory.getSelectedItem();
       if (this.placementSystem.placeBlockAction(this.world, this.player, this.inventory)) {
+        this.audioSystem.playSFX('place');
         this.needsRemesh = true;
+        // 放置灯时添加光源
+        if (this.placementSystem.placeBlock && item) {
+          const { x, y, z } = this.placementSystem.placeBlock;
+          if (item.blockType === BlockType.LAMP) {
+            this.lightingSystem.addLight(x, y, z, CONFIG.LAMP_RADIUS, this.renderer.scene);
+          } else if (item.blockType === BlockType.NIGHTLIGHT) {
+            this.lightingSystem.addLight(x, y, z, CONFIG.NIGHTLIGHT_RADIUS, this.renderer.scene);
+          }
+        }
       }
     }
   }
