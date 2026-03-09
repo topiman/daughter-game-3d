@@ -38,14 +38,14 @@ export class WeatherSystem {
     this.stopWeather(scene);
     this.currentWeather = 'rain';
     this.weatherTimer = CONFIG.WEATHER_DURATION;
-    this.createParticles(scene, 0x4488ff, 1.5);
+    this.createParticles(scene, 0x4488ff, 0.05);
   }
 
   startSnow(scene: THREE.Scene): void {
     this.stopWeather(scene);
     this.currentWeather = 'snow';
     this.weatherTimer = CONFIG.WEATHER_DURATION;
-    this.createParticles(scene, 0xffffff, 3);
+    this.createParticles(scene, 0xffffff, 0.15);
   }
 
   stopWeather(scene: THREE.Scene): void {
