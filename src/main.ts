@@ -208,7 +208,7 @@ class Game {
     this.lightingSystem = new LightingSystem();
     this.storageSystem = new StorageSystem();
     this.dog = new Dog();
-    this.dog.position.set(spawnX + 2, spawnY, spawnZ + 2);
+    this.dog.position.set(spawnX + 2, spawnY + 1, spawnZ + 2); // +1 确保不卡地面
     this.lastDayForWeather = 0;
 
     // P2 系统重置

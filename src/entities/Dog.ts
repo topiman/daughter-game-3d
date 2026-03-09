@@ -92,7 +92,8 @@ export class Dog {
     toPlayer.y = 0;
     const dist = toPlayer.length();
 
-    if (dist > CONFIG.DOG_FOLLOW_DIST + 0.5) {
+    const followThreshold = CONFIG.DOG_FOLLOW_DIST;
+    if (dist > followThreshold) {
       toPlayer.normalize();
       this.velocity.x = toPlayer.x * CONFIG.DOG_SPEED;
       this.velocity.z = toPlayer.z * CONFIG.DOG_SPEED;
@@ -103,7 +104,7 @@ export class Dog {
     }
 
     // 遇障碍自动跳
-    if (this.grounded && physics && dist > CONFIG.DOG_FOLLOW_DIST + 0.5) {
+    if (this.grounded && physics && dist > followThreshold) {
       const frontX = this.position.x + toPlayer.x * 0.5;
       const frontZ = this.position.z + toPlayer.z * 0.5;
       const frontBox = makeAABB(frontX, this.position.y, frontZ, this.DOG_WIDTH, this.DOG_HEIGHT, this.DOG_WIDTH);
