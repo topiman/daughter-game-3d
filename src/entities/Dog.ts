@@ -95,7 +95,17 @@ export class Dog {
       this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
     }
 
-    this.position.y = playerPos.y; // 简化：跟随玩家y
+    // 狗贴地面，不跟玩家跳（平滑过渡到玩家地面高度）
+    const targetY = playerPos.y;
+    if (this.position.y < targetY - 0.5) {
+      // 玩家在高处（爬上方块），狗瞬移跟上
+      this.position.y = targetY;
+    } else if (this.position.y > targetY + 0.1) {
+      // 玩家在低处（跳跃中或落下），狗不跟着飞，保持当前高度
+    } else {
+      // 正常地面跟随
+      this.position.y = targetY;
+    }
     this.mesh.position.copy(this.position);
 
     // 检测变异人
