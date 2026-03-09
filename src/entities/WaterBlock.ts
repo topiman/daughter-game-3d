@@ -34,7 +34,8 @@ export class WaterBlock {
     this.mesh.add(block);
 
     // 粒子效果
-    const particleCount = 30;
+    const isMobile = typeof window !== 'undefined' && 'ontouchstart' in window;
+    const particleCount = isMobile ? 12 : 30;
     this.particlePositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
       this.particlePositions[i * 3] = (Math.random() - 0.5) * 2;
