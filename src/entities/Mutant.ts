@@ -144,8 +144,15 @@ export class Mutant {
     }
   }
 
-  takeDamage(amount: number): void {
+  takeDamage(amount: number, knockbackDir?: THREE.Vector3): void {
     this.hp = Math.max(0, this.hp - amount);
+    // 击退效果
+    if (knockbackDir) {
+      const force = 8;
+      this.velocity.x = knockbackDir.x * force;
+      this.velocity.y = 3; // 稍微弹起
+      this.velocity.z = knockbackDir.z * force;
+    }
   }
 
   isDead(): boolean {

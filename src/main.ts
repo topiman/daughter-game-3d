@@ -402,10 +402,12 @@ class Game {
           
           if (dist <= CONFIG.SWORD_RANGE) {
             // 检查角度
-            const dot = toMutant.normalize().dot(dir);
-            if (dot > 0.7) { // 大约45度内
-              mutant.takeDamage(CONFIG.SWORD_DAMAGE);
+            const knockDir = toMutant.clone().normalize();
+            const dot = knockDir.dot(dir);
+            if (dot > 0.5) { // 约60度内，更宽容
+              mutant.takeDamage(CONFIG.SWORD_DAMAGE, knockDir);
               this.hud.showMessage('⚔️ 击中变异人！');
+              this.audioSystem?.playSFX('sword');
               if (mutant.isDead()) {
                 this.player.kills++;
                 this.hud.showMessage('💀 击杀变异人！');

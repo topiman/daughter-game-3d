@@ -28,6 +28,10 @@ export class Player {
   // 攻击动画
   private attackAnimTime = 0;
   private isAttacking = false;
+  
+  // 无敌帧
+  private lastDamageTime = 0;
+  private readonly INVINCIBILITY_DURATION = 0.8; // 受伤后0.8秒无敌
 
   // 方块人模型
   mesh: THREE.Group;
@@ -308,7 +312,10 @@ export class Player {
   }
 
   takeDamage(amount: number): void {
+    const now = performance.now() / 1000;
+    if (now - this.lastDamageTime < this.INVINCIBILITY_DURATION) return; // 无敌帧
     this.hp = Math.max(0, this.hp - amount);
+    this.lastDamageTime = now;
   }
 
   isDead(): boolean {
