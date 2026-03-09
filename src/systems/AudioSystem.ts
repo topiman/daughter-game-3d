@@ -15,6 +15,19 @@ export class AudioSystem {
     this.sfxGain = this.audioCtx.createGain();
     this.sfxGain.gain.value = 0.5;
     this.sfxGain.connect(this.audioCtx.destination);
+
+    // iOS/iPad 需要在用户交互时解锁 AudioContext
+    const unlock = () => {
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('touchend', unlock);
+      document.removeEventListener('click', unlock);
+    };
+    document.addEventListener('touchstart', unlock, { passive: true });
+    document.addEventListener('touchend', unlock, { passive: true });
+    document.addEventListener('click', unlock, { passive: true });
   }
 
   playBGM(): void {
