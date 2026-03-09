@@ -102,7 +102,7 @@ export const CONFIG = {
   SNOWMAN_MELT_TIME: 120,        // 融化时间（秒）
 
   // 草
-  GRASS_SPAWN_CHANCE: 0.15,      // 草生成概率
+  GRASS_SPAWN_CHANCE: 0.03,      // 草生成概率（3%，稀疏点缀）
 
   // 抱枕增强
   PILLOW_BED_BOOST: 35,          // 有抱枕时床回血35%

@@ -349,23 +349,23 @@ export function createTextureAtlas(): THREE.CanvasTexture {
 
   // 7,3 - 草（绿色半透明，十字面片用的纹理）
   drawTile(ctx, 7, 3, (ctx, x, y) => {
-    // 半透明绿色草叶纹理
-    for (let py = 0; py < TILE_SIZE; py++) {
-      for (let px = 0; px < TILE_SIZE; px++) {
-        // 底部更密，顶部更稀疏
-        const density = py / TILE_SIZE;
-        if (Math.random() < density * 0.8 + 0.1) {
-          const v = (Math.random() - 0.5) * 30;
-          const g = Math.min(255, Math.max(0, 140 + v));
-          ctx.fillStyle = `rgba(50,${g | 0},20,0.8)`;
-          ctx.fillRect(x + px, y + py, 1, 1);
-        }
-      }
+    // 清透的浅绿色草叶 — 只画几根草茎，大部分透明
+    // 先清透明
+    ctx.clearRect(x, y, TILE_SIZE, TILE_SIZE);
+    // 草茎（从底部向上生长，细长条）
+    const stems = [
+      { sx: 2, h: 12, color: 'rgba(80,190,50,0.85)' },
+      { sx: 5, h: 14, color: 'rgba(70,180,40,0.9)' },
+      { sx: 8, h: 11, color: 'rgba(90,200,55,0.85)' },
+      { sx: 10, h: 15, color: 'rgba(75,185,45,0.9)' },
+      { sx: 13, h: 13, color: 'rgba(85,195,50,0.85)' },
+    ];
+    for (const stem of stems) {
+      ctx.fillStyle = stem.color;
+      ctx.fillRect(x + stem.sx, y + (TILE_SIZE - stem.h), 1, stem.h);
+      // 叶尖稍宽
+      ctx.fillRect(x + stem.sx - 1, y + (TILE_SIZE - stem.h), 1, 2);
     }
-    // 几根突出的草叶
-    drawPixelRect(ctx, x + 3, y + 0, 1, 8, 'rgba(60,160,30,0.9)');
-    drawPixelRect(ctx, x + 7, y + 1, 1, 7, 'rgba(50,140,25,0.9)');
-    drawPixelRect(ctx, x + 11, y + 0, 1, 9, 'rgba(55,150,28,0.9)');
   });
 
   // 0,3 - 抱枕顶面（紫色软垫）
