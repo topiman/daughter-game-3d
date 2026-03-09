@@ -14,6 +14,7 @@ export class WaterBlock {
   private countdownSprite: THREE.Sprite;
   private countdownCanvas: HTMLCanvasElement;
   private countdownCtx: CanvasRenderingContext2D;
+  private lastCountdownText = '';
 
   constructor(x: number, y: number, z: number) {
     this.position = new THREE.Vector3(x + 0.5, y, z + 0.5);
@@ -148,13 +149,17 @@ export class WaterBlock {
   }
 
   private updateCountdown(): void {
+    const remaining = this.getCooldownRemaining();
+    const ready = remaining <= 0;
+    // 只显示整数秒，减少重绘次数（从每帧→每秒）
+    const text = ready ? 'ready' : String(Math.ceil(remaining));
+    if (text === this.lastCountdownText) return; // 没变就不重绘
+    this.lastCountdownText = text;
+
     const ctx = this.countdownCtx;
     const w = this.countdownCanvas.width;
     const h = this.countdownCanvas.height;
     ctx.clearRect(0, 0, w, h);
-
-    const remaining = this.getCooldownRemaining();
-    const ready = remaining <= 0;
 
     // 背景
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -169,15 +174,13 @@ export class WaterBlock {
       ctx.textBaseline = 'middle';
       ctx.fillText('✨ 就绪', w / 2, h / 2);
     } else {
-      // 倒计时数字
       ctx.fillStyle = '#FFAA00';
       ctx.font = 'bold 28px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`⏳ ${remaining.toFixed(1)}s`, w / 2, h / 2);
+      ctx.fillText(`⏳ ${Math.ceil(remaining)}s`, w / 2, h / 2);
     }
 
-    // 刷新纹理
     (this.countdownSprite.material as THREE.SpriteMaterial).map!.needsUpdate = true;
   }
 

@@ -224,8 +224,13 @@ export class TouchControls {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i];
       if (touch.identifier === this.lookTouchId) {
-        this.lookDX += (touch.clientX - this.lookLastX) * 0.5;
-        this.lookDY += (touch.clientY - this.lookLastY) * 0.5;
+        const dx = touch.clientX - this.lookLastX;
+        const dy = touch.clientY - this.lookLastY;
+        // 小幅移动忽略（防抖），大幅移动平滑
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+          this.lookDX += dx * 0.4;
+          this.lookDY += dy * 0.4;
+        }
         this.lookLastX = touch.clientX;
         this.lookLastY = touch.clientY;
         break;

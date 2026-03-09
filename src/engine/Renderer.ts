@@ -22,7 +22,9 @@ export class Renderer {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // iPad Retina 3x太重，限制到1.5
+    const isMobile = 'ontouchstart' in window;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     this.renderer.shadowMap.enabled = false; // 性能
 
     // 天空背景 — 渐变色
