@@ -349,22 +349,28 @@ export function createTextureAtlas(): THREE.CanvasTexture {
 
   // 7,3 - 草（绿色半透明，十字面片用的纹理）
   drawTile(ctx, 7, 3, (ctx, x, y) => {
-    // 清透的浅绿色草叶 — 只画几根草茎，大部分透明
-    // 先清透明
-    ctx.clearRect(x, y, TILE_SIZE, TILE_SIZE);
-    // 草茎（从底部向上生长，细长条）
-    const stems = [
-      { sx: 2, h: 12, color: 'rgba(80,190,50,0.85)' },
-      { sx: 5, h: 14, color: 'rgba(70,180,40,0.9)' },
-      { sx: 8, h: 11, color: 'rgba(90,200,55,0.85)' },
-      { sx: 10, h: 15, color: 'rgba(75,185,45,0.9)' },
-      { sx: 13, h: 13, color: 'rgba(85,195,50,0.85)' },
-    ];
-    for (const stem of stems) {
-      ctx.fillStyle = stem.color;
-      ctx.fillRect(x + stem.sx, y + (TILE_SIZE - stem.h), 1, stem.h);
-      // 叶尖稍宽
-      ctx.fillRect(x + stem.sx - 1, y + (TILE_SIZE - stem.h), 1, 2);
+    // 可爱小灌木纹理 — 明亮的绿色，带深浅变化
+    // 基底亮绿
+    drawNoise(ctx, x, y, [90, 190, 50], 20);
+    // 顶部更亮（受光面）
+    for (let px = 0; px < TILE_SIZE; px++) {
+      for (let py = 0; py < 5; py++) {
+        const v = (Math.random() - 0.5) * 15;
+        ctx.fillStyle = `rgb(${110 + v|0},${210 + v|0},${70 + v|0})`;
+        ctx.fillRect(x + px, y + py, 1, 1);
+      }
+    }
+    // 几个深色圆点（叶片阴影）
+    for (let i = 0; i < 5; i++) {
+      const px = (Math.random() * 12 + 2) | 0;
+      const py = (Math.random() * 12 + 2) | 0;
+      drawPixelRect(ctx, x + px, y + py, 2, 2, '#3a8520');
+    }
+    // 几个亮点（高光）
+    for (let i = 0; i < 3; i++) {
+      const px = (Math.random() * 12 + 2) | 0;
+      const py = (Math.random() * 6 + 1) | 0;
+      drawPixelRect(ctx, x + px, y + py, 1, 1, '#b0f070');
     }
   });
 
