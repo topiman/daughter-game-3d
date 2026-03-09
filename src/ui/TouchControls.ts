@@ -226,10 +226,9 @@ export class TouchControls {
       if (touch.identifier === this.lookTouchId) {
         const dx = touch.clientX - this.lookLastX;
         const dy = touch.clientY - this.lookLastY;
-        // 小幅移动忽略（防抖），大幅移动平滑
         if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-          this.lookDX += dx * 0.4;
-          this.lookDY += dy * 0.4;
+          this.lookDX += dx * 0.8;
+          this.lookDY += dy * 0.8;
         }
         this.lookLastX = touch.clientX;
         this.lookLastY = touch.clientY;
