@@ -1,6 +1,7 @@
 // 方块小狗伙伴
 import * as THREE from 'three';
 import { CONFIG } from '../data/config';
+import { Physics, makeAABB } from '../engine/Physics';
 
 export class Dog {
   mesh: THREE.Group;
@@ -80,28 +81,61 @@ export class Dog {
     this.mesh.add(tail);
   }
 
-  private groundY = 0;
+  private velocity = new THREE.Vector3(0, 0, 0);
+  private grounded = false;
+  private readonly DOG_WIDTH = 0.4;
+  private readonly DOG_HEIGHT = 0.7;
 
-  update(dt: number, playerPos: THREE.Vector3, mutants: Array<{ position: THREE.Vector3 }>, playerGrounded?: boolean): void {
-    // 跟随玩家
+  update(dt: number, playerPos: THREE.Vector3, mutants: Array<{ position: THREE.Vector3 }>, _playerGrounded?: boolean, physics?: Physics): void {
+    // 跟随玩家（水平方向）
     const toPlayer = new THREE.Vector3().subVectors(playerPos, this.position);
     toPlayer.y = 0;
     const dist = toPlayer.length();
 
     if (dist > CONFIG.DOG_FOLLOW_DIST + 0.5) {
       toPlayer.normalize();
-      const speed = CONFIG.DOG_SPEED * dt;
-      this.position.x += toPlayer.x * speed;
-      this.position.z += toPlayer.z * speed;
-      // 面朝玩家
+      this.velocity.x = toPlayer.x * CONFIG.DOG_SPEED;
+      this.velocity.z = toPlayer.z * CONFIG.DOG_SPEED;
       this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
+    } else {
+      this.velocity.x = 0;
+      this.velocity.z = 0;
     }
 
-    // 狗只在玩家落地时同步Y，跳跃时不跟
-    if (playerGrounded !== false) {
-      this.groundY = playerPos.y;
+    // 遇障碍自动跳
+    if (this.grounded && physics && dist > CONFIG.DOG_FOLLOW_DIST + 0.5) {
+      const frontX = this.position.x + toPlayer.x * 0.5;
+      const frontZ = this.position.z + toPlayer.z * 0.5;
+      const frontBox = makeAABB(frontX, this.position.y, frontZ, this.DOG_WIDTH, this.DOG_HEIGHT, this.DOG_WIDTH);
+      if (physics.collidesWithWorld(frontBox)) {
+        this.velocity.y = CONFIG.PLAYER_JUMP_VELOCITY * 0.7; // 狗跳稍矮
+        this.grounded = false;
+      }
     }
-    this.position.y = this.groundY;
+
+    // 重力
+    this.velocity.y += CONFIG.GRAVITY * dt;
+    if (this.velocity.y < CONFIG.MAX_FALL_SPEED) this.velocity.y = CONFIG.MAX_FALL_SPEED;
+
+    // 物理碰撞
+    if (physics) {
+      const pos = { x: this.position.x, y: this.position.y, z: this.position.z };
+      const vel = { x: this.velocity.x, y: this.velocity.y, z: this.velocity.z };
+      const result = physics.moveEntity(pos, vel, this.DOG_WIDTH, this.DOG_HEIGHT, dt);
+      this.position.set(pos.x, pos.y, pos.z);
+      this.velocity.set(vel.x, vel.y, vel.z);
+      this.grounded = result.grounded;
+    } else {
+      // 无物理时退回简单模式
+      this.position.y = playerPos.y;
+    }
+
+    // 距离太远则传送（防止掉队）
+    if (dist > 15) {
+      this.position.set(playerPos.x - 1, playerPos.y, playerPos.z - 1);
+      this.velocity.set(0, 0, 0);
+    }
+
     this.mesh.position.copy(this.position);
 
     // 检测变异人
