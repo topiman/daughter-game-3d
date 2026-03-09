@@ -11,6 +11,9 @@ export class WaterBlock {
   private indicator: THREE.Sprite;
   private indicatorReady: THREE.SpriteMaterial;
   private indicatorCooldown: THREE.SpriteMaterial;
+  private countdownSprite: THREE.Sprite;
+  private countdownCanvas: HTMLCanvasElement;
+  private countdownCtx: CanvasRenderingContext2D;
 
   constructor(x: number, y: number, z: number) {
     this.position = new THREE.Vector3(x + 0.5, y, z + 0.5);
@@ -61,6 +64,18 @@ export class WaterBlock {
     this.indicator.position.set(0, 1.6, 0);
     this.indicator.visible = false;
     this.mesh.add(this.indicator);
+
+    // 常驻倒计时显示
+    this.countdownCanvas = document.createElement('canvas');
+    this.countdownCanvas.width = 128;
+    this.countdownCanvas.height = 64;
+    this.countdownCtx = this.countdownCanvas.getContext('2d')!;
+    const cdTexture = new THREE.CanvasTexture(this.countdownCanvas);
+    const cdMat = new THREE.SpriteMaterial({ map: cdTexture, transparent: true });
+    this.countdownSprite = new THREE.Sprite(cdMat);
+    this.countdownSprite.scale.set(0.8, 0.4, 1);
+    this.countdownSprite.position.set(0, 1.2, 0);
+    this.mesh.add(this.countdownSprite);
   }
 
   private createIndicatorMaterial(text: string, color: string): THREE.SpriteMaterial {
@@ -127,6 +142,43 @@ export class WaterBlock {
         this.indicator.visible = false;
       }
     }
+
+    // 更新常驻倒计时
+    this.updateCountdown();
+  }
+
+  private updateCountdown(): void {
+    const ctx = this.countdownCtx;
+    const w = this.countdownCanvas.width;
+    const h = this.countdownCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const remaining = this.getCooldownRemaining();
+    const ready = remaining <= 0;
+
+    // 背景
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.roundRect(4, 4, w - 8, h - 8, 8);
+    ctx.fill();
+
+    if (ready) {
+      ctx.fillStyle = '#00FF88';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✨ 就绪', w / 2, h / 2);
+    } else {
+      // 倒计时数字
+      ctx.fillStyle = '#FFAA00';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`⏳ ${remaining.toFixed(1)}s`, w / 2, h / 2);
+    }
+
+    // 刷新纹理
+    (this.countdownSprite.material as THREE.SpriteMaterial).map!.needsUpdate = true;
   }
 
   canInteract(): boolean {
