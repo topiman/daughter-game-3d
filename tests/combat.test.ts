@@ -104,12 +104,34 @@ describe('坠落伤害', () => {
     expect(player.isDead()).toBe(true)
   })
 
-  it('Player.takeDamage 正确扣血', () => {
+  it('Player.takeDamage 战斗伤害有无敌帧', () => {
+    let mockTime = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => mockTime)
     const player = new Player()
-    player.takeDamage(30)
+    player.takeDamage(30, true) // 战斗伤害
     expect(player.hp).toBe(70)
-    player.takeDamage(100)
-    expect(player.hp).toBe(0) // 不低于 0
+    // 无敌帧内不受伤
+    mockTime += 100
+    player.takeDamage(10, true)
+    expect(player.hp).toBe(70) // 还在无敌帧内
+    // 无敌帧结束后可受伤
+    mockTime += 1000
+    player.takeDamage(100, true)
+    expect(player.hp).toBe(0)
+    vi.restoreAllMocks()
+  })
+
+  it('Player.takeDamage 系统伤害无视无敌帧', () => {
+    let mockTime = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => mockTime)
+    const player = new Player()
+    player.takeDamage(30, true) // 战斗伤害
+    expect(player.hp).toBe(70)
+    // 系统伤害无视无敌帧
+    mockTime += 100
+    player.takeDamage(20, false) // 系统伤害（饥饿）
+    expect(player.hp).toBe(50)
+    vi.restoreAllMocks()
   })
 
   it('Mutant.takeDamage 正确扣血', () => {

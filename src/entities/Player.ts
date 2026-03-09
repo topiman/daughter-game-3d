@@ -311,11 +311,14 @@ export class Player {
     );
   }
 
-  takeDamage(amount: number): void {
-    const now = performance.now() / 1000;
-    if (now - this.lastDamageTime < this.INVINCIBILITY_DURATION) return; // 无敌帧
+  // combat=true 是战斗伤害（有无敌帧），false 是系统伤害（饥饿/坠落，无视无敌帧）
+  takeDamage(amount: number, combat = true): void {
+    if (combat) {
+      const now = performance.now() / 1000;
+      if (now - this.lastDamageTime < this.INVINCIBILITY_DURATION) return;
+      this.lastDamageTime = now;
+    }
     this.hp = Math.max(0, this.hp - amount);
-    this.lastDamageTime = now;
   }
 
   isDead(): boolean {

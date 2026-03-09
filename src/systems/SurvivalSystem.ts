@@ -12,7 +12,7 @@ export class SurvivalSystem {
 
       // 饥饿归零掉血
       if (player.hunger <= 0) {
-        player.takeDamage(CONFIG.HUNGER_ZERO_HP_LOSS);
+        player.takeDamage(CONFIG.HUNGER_ZERO_HP_LOSS, false); // 系统伤害，无视无敌帧
       }
 
       // 自然恢复
