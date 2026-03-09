@@ -7,7 +7,7 @@ export class WeatherSystem {
   private weatherTimer = 0;
   private particles: THREE.Points | null = null;
   private particleGeo: THREE.BufferGeometry | null = null;
-  private particleCount = ('ontouchstart' in (typeof window !== 'undefined' ? window : {})) ? 300 : 800;
+  private particleCount = 800;
 
   update(dt: number, scene: THREE.Scene, playerPos?: THREE.Vector3): void {
     if (this.currentWeather !== 'clear') {

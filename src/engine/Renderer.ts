@@ -12,23 +12,21 @@ export class Renderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
-    const isMobile = 'ontouchstart' in window;
 
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.THIRD_PERSON_FOV,
       window.innerWidth / window.innerHeight,
       0.1,
-      isMobile ? 60 : 200
+      200
     );
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile }); // 移动端关抗锯齿
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // 移动端1x
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = false; // 性能
 
     // 天空背景 — 渐变色
     this.scene.background = new THREE.Color('#87CEEB');
-    // 移动端缩短视距，减少渲染量
-    this.scene.fog = new THREE.Fog('#87CEEB', isMobile ? 25 : 50, isMobile ? 45 : 80);
+    this.scene.fog = new THREE.Fog('#87CEEB', 50, 80);
 
     // 灯光
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -54,8 +52,7 @@ export class Renderer {
   private createClouds(): void {
     const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
     
-    const cloudCount = ('ontouchstart' in window) ? 6 : 15;
-    for (let i = 0; i < cloudCount; i++) {
+    for (let i = 0; i < 15; i++) {
       const cloud = new THREE.Group();
       // 每朵云由几个方块组成
       const numBlocks = 3 + Math.floor(Math.random() * 5);
