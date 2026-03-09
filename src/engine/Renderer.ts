@@ -12,6 +12,7 @@ export class Renderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
+    const isMobile = 'ontouchstart' in window;
 
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.THIRD_PERSON_FOV,
@@ -19,8 +20,6 @@ export class Renderer {
       0.1,
       isMobile ? 60 : 200
     );
-
-    const isMobile = 'ontouchstart' in window;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile }); // 移动端关抗锯齿
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // 移动端1x
